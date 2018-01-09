@@ -21,3 +21,5 @@ Samples and Demos
 
 To add a new sample documentation, please use the template available under
 :file:`doc/templates/sample.tmpl`
+
+hi tejas!
