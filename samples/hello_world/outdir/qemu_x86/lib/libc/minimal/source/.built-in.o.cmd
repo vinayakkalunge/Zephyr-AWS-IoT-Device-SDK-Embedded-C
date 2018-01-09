@@ -1,0 +1,1 @@
+cmd_lib/libc/minimal/source/built-in.o :=  /opt/zephyr-sdk//sysroots/x86_64-pokysdk-linux/usr/bin/i586-zephyr-elf/i586-zephyr-elf-ld -nostartfiles -nodefaultlibs -nostdlib -static   -r -o lib/libc/minimal/source/built-in.o lib/libc/minimal/source/stdout/built-in.o lib/libc/minimal/source/string/built-in.o lib/libc/minimal/source/stdlib/built-in.o 

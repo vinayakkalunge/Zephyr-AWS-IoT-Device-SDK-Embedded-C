@@ -1,0 +1,117 @@
+cmd_misc/generated/configs.o := /opt/zephyr-sdk//sysroots/x86_64-pokysdk-linux/usr/bin/i586-zephyr-elf/i586-zephyr-elf-gcc -Wp,-MD,misc/generated/.configs.o.d  -nostdinc -isystem /opt/zephyr-sdk/sysroots/x86_64-pokysdk-linux/usr/lib/i586-zephyr-elf/gcc/i586-zephyr-elf/6.2.0/include -isystem /opt/zephyr-sdk/sysroots/x86_64-pokysdk-linux/usr/lib/i586-zephyr-elf/gcc/i586-zephyr-elf/6.2.0/include-fixed -I/home/tejashree/zephyr-zephyr-v1.7.1/kernel/include -I/home/tejashree/zephyr-zephyr-v1.7.1/arch/x86/include -I/home/tejashree/zephyr-zephyr-v1.7.1/arch/x86/soc/ia32 -I/home/tejashree/zephyr-zephyr-v1.7.1/boards/x86/qemu_x86  -I/home/tejashree/zephyr-zephyr-v1.7.1/include -I/home/tejashree/zephyr-zephyr-v1.7.1/include -I/home/tejashree/zephyr-zephyr-v1.7.1/samples/hello_world/outdir/qemu_x86/include/generated -I/home/tejashree/zephyr-zephyr-v1.7.1/samples/hello_world/outdir/qemu_x86/misc/generated/sysgen -include /home/tejashree/zephyr-zephyr-v1.7.1/samples/hello_world/outdir/qemu_x86/include/generated/autoconf.h  -I/home/tejashree/zephyr-zephyr-v1.7.1/lib/libc/minimal/include  -I/home/tejashree/zephyr-zephyr-v1.7.1/misc/generated -Imisc/generated -DKERNEL -D__ZEPHYR__=1 -c -g -std=c99 -Wall -Wformat -Wformat-security -D_FORTIFY_SOURCE=2 -Wno-format-zero-length -Wno-main -ffreestanding -Os -fno-asynchronous-unwind-tables -fno-stack-protector -ffunction-sections -fdata-sections -mpreferred-stack-boundary=2 -mno-sse -march=pentium -Wno-unused-but-set-variable -fno-reorder-functions -fno-defer-pop -Wno-pointer-sign -fno-strict-overflow -Werror=implicit-int    -D"KBUILD_STR(s)=\#s" -D"KBUILD_BASENAME=KBUILD_STR(configs)"  -D"KBUILD_MODNAME=KBUILD_STR(configs)" -c -o misc/generated/configs.o misc/generated/configs.c
+
+source_misc/generated/configs.o := misc/generated/configs.c
+
+deps_misc/generated/configs.o := \
+    $(wildcard include/config/uart/console/on/dev/name.h) \
+    $(wildcard include/config/num/preempt/priorities.h) \
+    $(wildcard include/config/num/coop/priorities.h) \
+    $(wildcard include/config/uart/ns16550/port/1/name.h) \
+    $(wildcard include/config/atomic/operations/builtin.h) \
+    $(wildcard include/config/kernel/bin/name.h) \
+    $(wildcard include/config/printk.h) \
+    $(wildcard include/config/multithreading.h) \
+    $(wildcard include/config/arch.h) \
+    $(wildcard include/config/x86.h) \
+    $(wildcard include/config/console/input/max/line/len.h) \
+    $(wildcard include/config/uart/ns16550/port/0/options.h) \
+    $(wildcard include/config/serial/has/driver.h) \
+    $(wildcard include/config/num/pipe/async/msgs.h) \
+    $(wildcard include/config/console/has/driver.h) \
+    $(wildcard include/config/timeslice/size.h) \
+    $(wildcard include/config/timer/reads/its/frequency/at/runtime.h) \
+    $(wildcard include/config/arch/defconfig.h) \
+    $(wildcard include/config/uart/ns16550.h) \
+    $(wildcard include/config/sys/clock/hw/cycles/per/sec.h) \
+    $(wildcard include/config/num/mbox/async/msgs.h) \
+    $(wildcard include/config/ioapic.h) \
+    $(wildcard include/config/test/extra/stacksize.h) \
+    $(wildcard include/config/set/gdt.h) \
+    $(wildcard include/config/boot/banner.h) \
+    $(wildcard include/config/uart/ns16550/port/0/name.h) \
+    $(wildcard include/config/exception/debug.h) \
+    $(wildcard include/config/timeslicing.h) \
+    $(wildcard include/config/timeslice/priority.h) \
+    $(wildcard include/config/pic/disable.h) \
+    $(wildcard include/config/compiler/opt.h) \
+    $(wildcard include/config/coop/enabled.h) \
+    $(wildcard include/config/ia32/legacy/io/ports.h) \
+    $(wildcard include/config/ioapic/mask/rte.h) \
+    $(wildcard include/config/ioapic/num/rtes.h) \
+    $(wildcard include/config/early/console.h) \
+    $(wildcard include/config/hpet/timer.h) \
+    $(wildcard include/config/uart/ns16550/port/1/irq/pri.h) \
+    $(wildcard include/config/toolchain/variant.h) \
+    $(wildcard include/config/loapic/base/address.h) \
+    $(wildcard include/config/idle/stack/size.h) \
+    $(wildcard include/config/system/workqueue/stack/size.h) \
+    $(wildcard include/config/board.h) \
+    $(wildcard include/config/priority/ceiling.h) \
+    $(wildcard include/config/cache/line/size/detect.h) \
+    $(wildcard include/config/console.h) \
+    $(wildcard include/config/soc/ia32.h) \
+    $(wildcard include/config/idt/num/vectors.h) \
+    $(wildcard include/config/heap/mem/pool/size.h) \
+    $(wildcard include/config/uart/ns16550/port/1.h) \
+    $(wildcard include/config/uart/ns16550/port/1/baud/rate.h) \
+    $(wildcard include/config/isr/stack/size.h) \
+    $(wildcard include/config/ram/size.h) \
+    $(wildcard include/config/sys/clock/exists.h) \
+    $(wildcard include/config/phys/load/addr.h) \
+    $(wildcard include/config/max/irq/lines.h) \
+    $(wildcard include/config/serial.h) \
+    $(wildcard include/config/application/init/priority.h) \
+    $(wildcard include/config/uart/ns16550/port/0/irq/pri.h) \
+    $(wildcard include/config/build/timestamp.h) \
+    $(wildcard include/config/offload/workqueue/stack/size.h) \
+    $(wildcard include/config/uart/console/init/priority.h) \
+    $(wildcard include/config/phys/ram/addr.h) \
+    $(wildcard include/config/errno.h) \
+    $(wildcard include/config/ioapic/base/address.h) \
+    $(wildcard include/config/offload/workqueue/priority.h) \
+    $(wildcard include/config/loapic.h) \
+    $(wildcard include/config/preempt/enabled.h) \
+    $(wildcard include/config/nested/interrupts.h) \
+    $(wildcard include/config/hpet/timer/base/address.h) \
+    $(wildcard include/config/sys/clock/ticks/per/sec.h) \
+    $(wildcard include/config/bootloader/unknown.h) \
+    $(wildcard include/config/hpet/timer/irq/priority.h) \
+    $(wildcard include/config/hpet/timer/irq.h) \
+    $(wildcard include/config/board/qemu/x86.h) \
+    $(wildcard include/config/kernel/init/priority/default.h) \
+    $(wildcard include/config/system/workqueue/priority.h) \
+    $(wildcard include/config/main/stack/size.h) \
+    $(wildcard include/config/kernel/init/priority/device.h) \
+    $(wildcard include/config/uart/ns16550/port/0.h) \
+    $(wildcard include/config/cache/line/size.h) \
+    $(wildcard include/config/system/clock/init/priority.h) \
+    $(wildcard include/config/kernel/init/priority/objects.h) \
+    $(wildcard include/config/cpu/minuteia.h) \
+    $(wildcard include/config/cpu/has/fpu.h) \
+    $(wildcard include/config/text/section/offset.h) \
+    $(wildcard include/config/main/thread/priority.h) \
+    $(wildcard include/config/uart/ns16550/port/0/baud/rate.h) \
+    $(wildcard include/config/cross/compile.h) \
+    $(wildcard include/config/soc.h) \
+    $(wildcard include/config/uart/ns16550/port/1/options.h) \
+    $(wildcard include/config/uart/console.h) \
+    $(wildcard include/config/hpet/timer/rising/edge.h) \
+    $(wildcard include/config/hpet/timer/legacy/emulation.h) \
+    $(wildcard include/config/sys/log/ieee802154/driver/level.h) \
+    $(wildcard include/config/mem/pool/split/before/defrag.h) \
+    $(wildcard include/config/isa/ia32.h) \
+  /home/tejashree/zephyr-zephyr-v1.7.1/include/toolchain.h \
+  /home/tejashree/zephyr-zephyr-v1.7.1/include/toolchain/gcc.h \
+    $(wildcard include/config/arm.h) \
+    $(wildcard include/config/isa/thumb.h) \
+    $(wildcard include/config/isa/thumb2.h) \
+    $(wildcard include/config/isa/arm.h) \
+    $(wildcard include/config/nios2.h) \
+    $(wildcard include/config/riscv32.h) \
+    $(wildcard include/config/xtensa.h) \
+    $(wildcard include/config/arc.h) \
+  /home/tejashree/zephyr-zephyr-v1.7.1/include/toolchain/common.h \
+
+misc/generated/configs.o: $(deps_misc/generated/configs.o)
+
+$(deps_misc/generated/configs.o):

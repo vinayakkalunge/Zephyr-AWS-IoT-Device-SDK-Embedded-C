@@ -1,0 +1,24 @@
+# Kconfig - ST STM32F411CE MCU configuration options
+#
+# Copyright (c) 2016 Linaro Limited.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_STM32F411XE
+
+config SOC
+	string
+	default stm32f411xe
+
+config SRAM_SIZE
+	default 128
+
+config FLASH_SIZE
+	default 512
+
+config NUM_IRQS
+	int
+	default 85
+
+endif # SOC_STM32F411XE

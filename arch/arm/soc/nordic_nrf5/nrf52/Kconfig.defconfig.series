@@ -1,0 +1,32 @@
+# Kconfig.defconfig.series - Nordic Semiconductor nRF5 MCU line
+#
+# Copyright (c) 2016 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_NRF52X
+
+source "arch/arm/soc/nordic_nrf5/nrf52/Kconfig.defconfig.nrf52*"
+
+config SOC_SERIES
+	default nrf52
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 32768
+
+config SYS_POWER_MANAGEMENT
+	default y
+
+config SRAM_BASE_ADDRESS
+	default 0x20000000
+
+config FLASH_BASE_ADDRESS
+	default 0x00000000
+
+config NUM_IRQ_PRIO_BITS
+	int
+	default 3
+
+endif # SOC_SERIES_NRF52X

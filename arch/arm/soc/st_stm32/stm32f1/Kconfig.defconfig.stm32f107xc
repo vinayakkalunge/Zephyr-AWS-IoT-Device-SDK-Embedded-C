@@ -1,0 +1,24 @@
+# Kconfig - ST Microelectronics STM32F107XC MCU
+#
+# Copyright (c) 2016 RnDity Sp. z o.o.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_STM32F107XC
+
+config SOC
+	string
+	default stm32f107xc
+
+config SRAM_SIZE
+	default 64
+
+config FLASH_SIZE
+	default 256
+
+config NUM_IRQS
+	int
+	default 68
+
+endif # SOC_STM32F107XC

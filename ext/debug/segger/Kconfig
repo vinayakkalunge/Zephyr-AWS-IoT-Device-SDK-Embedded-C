@@ -1,0 +1,10 @@
+#
+# Copyright (c) 2016 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config HAS_SEGGER_RTT
+	bool
+	prompt "Segger RTT support"
+	default n

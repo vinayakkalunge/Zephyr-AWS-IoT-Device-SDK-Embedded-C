@@ -1,0 +1,4239 @@
+
+zephyr.elf:     file format elf32-i386
+
+
+Disassembly of section text:
+
+00100000 <__start>:
+        mov  %eax, %esi			/* low  value */
+        mov  %edx, %edi			/* high value */
+#endif
+
+	/* Enable write-back caching by clearing the NW and CD bits */
+	movl	%cr0, %eax
+  100000:	0f 20 c0             	mov    %cr0,%eax
+	andl	$0x9fffffff, %eax
+  100003:	25 ff ff ff 9f       	and    $0x9fffffff,%eax
+	movl	%eax, %cr0
+  100008:	0f 22 c0             	mov    %eax,%cr0
+	/*
+	 * Ensure interrupts are disabled.  Interrupts are enabled when
+	 * the first context switch occurs.
+	 */
+
+	cli
+  10000b:	fa                   	cli    
+	 * Although the bootloader sets up an Interrupt Descriptor Table (IDT)
+	 * and a Global Descriptor Table (GDT), the specification encourages
+	 * booted operating systems to setup their own IDT and GDT.
+	 */
+#if CONFIG_SET_GDT
+	lgdt	_gdt_rom		/* load 32-bit operand size GDT */
+  10000c:	0f 01 15 70 00 10 00 	lgdtl  0x100070
+#endif
+	lidt	_Idt		/* load 32-bit operand size IDT */
+  100013:	0f 01 1d 57 00 10 00 	lidtl  0x100057
+
+
+#ifdef CONFIG_SET_GDT
+	/* If we set our own GDT, update the segment registers as well.
+	 */
+	movw	$0x10, %ax	/* data segment selector (entry = 3) */
+  10001a:	66 b8 10 00          	mov    $0x10,%ax
+	movw	%ax, %ds	/* set DS */
+  10001e:	8e d8                	mov    %eax,%ds
+	movw	%ax, %es	/* set ES */
+  100020:	8e c0                	mov    %eax,%es
+	movw	%ax, %fs	/* set FS */
+  100022:	8e e0                	mov    %eax,%fs
+	movw	%ax, %gs	/* set GS */
+  100024:	8e e8                	mov    %eax,%gs
+	movw	%ax, %ss	/* set SS */
+  100026:	8e d0                	mov    %eax,%ss
+
+	ljmp	$0x08, $__csSet	/* set CS = 0x08 */
+  100028:	ea 2f 00 10 00 08 00 	ljmp   $0x8,$0x10002f
+
+0010002f <__csSet>:
+	/*
+	 * Force an #NM exception for floating point instructions
+	 * since FP support hasn't been configured
+	 */
+
+	movl	%cr0, %eax		/* move CR0 to EAX */
+  10002f:	0f 20 c0             	mov    %cr0,%eax
+	orl	$0x2e, %eax		/* CR0[NE+TS+EM+MP]=1 */
+  100032:	83 c8 2e             	or     $0x2e,%eax
+	movl	%eax, %cr0		/* move EAX to CR0 */
+  100035:	0f 22 c0             	mov    %eax,%cr0
+	stack_size_dwords = (CONFIG_ISR_STACK_SIZE / 4)
+	movl $stack_size_dwords, %ecx
+	rep  stosl
+#endif
+
+	movl	$_interrupt_stack, %esp
+  100038:	bc 60 24 10 00       	mov    $0x102460,%esp
+	addl	$CONFIG_ISR_STACK_SIZE, %esp
+  10003d:	81 c4 00 08 00 00    	add    $0x800,%esp
+
+#else /* !CONFIG_SSE */
+
+	/* clear out BSS double words (32-bits at a time) */
+
+	xorl	%eax, %eax		/* fill memory with 0 */
+  100043:	31 c0                	xor    %eax,%eax
+	movl	$__bss_start, %edi	/* load BSS start address */
+  100045:	bf 00 23 10 00       	mov    $0x102300,%edi
+	movl	$__bss_num_words, %ecx	/* number of quad bytes */
+  10004a:	b9 58 00 00 00       	mov    $0x58,%ecx
+	cld
+  10004f:	fc                   	cld    
+	rep
+  100050:	f3 ab                	rep stos %eax,%es:(%edi)
+	lgdt	%ds:_gdt
+#endif
+
+	/* Jump to C portion of kernel initialization and never return */
+
+	jmp	_Cstart
+  100052:	e9 64 0e 00 00       	jmp    100ebb <_Cstart>
+
+00100057 <_Idt>:
+  100057:	ff 07 f0 19 10 00 8d 76 00 02 b0 ad 1b 00 00 00     .......v........
+  100067:	00 fe 4f 52 e4 8d 74 26 00                          ..OR..t&.
+
+00100070 <_gdt>:
+  100070:	17 00 70 00 10 00 00 00 ff ff 00 00 00 9b cf 00     ..p.............
+  100080:	ff ff 00 00 00 93 cf 00                             ........
+
+00100088 <_gdt_rom_end>:
+  100088:	66 90                	xchg   %ax,%ax
+  10008a:	66 90                	xchg   %ax,%ax
+  10008c:	66 90                	xchg   %ax,%ax
+  10008e:	66 90                	xchg   %ax,%ax
+
+00100090 <__udivdi3>:
+  100090:	55                   	push   %ebp
+  100091:	57                   	push   %edi
+  100092:	56                   	push   %esi
+  100093:	53                   	push   %ebx
+  100094:	83 ec 1c             	sub    $0x1c,%esp
+  100097:	8b 5c 24 30          	mov    0x30(%esp),%ebx
+  10009b:	8b 4c 24 34          	mov    0x34(%esp),%ecx
+  10009f:	8b 7c 24 38          	mov    0x38(%esp),%edi
+  1000a3:	8b 74 24 3c          	mov    0x3c(%esp),%esi
+  1000a7:	89 5c 24 04          	mov    %ebx,0x4(%esp)
+  1000ab:	89 ca                	mov    %ecx,%edx
+  1000ad:	89 7c 24 08          	mov    %edi,0x8(%esp)
+  1000b1:	85 f6                	test   %esi,%esi
+  1000b3:	75 3b                	jne    1000f0 <__udivdi3+0x60>
+  1000b5:	39 cf                	cmp    %ecx,%edi
+  1000b7:	0f 87 c3 00 00 00    	ja     100180 <__udivdi3+0xf0>
+  1000bd:	89 fd                	mov    %edi,%ebp
+  1000bf:	85 ff                	test   %edi,%edi
+  1000c1:	75 0b                	jne    1000ce <__udivdi3+0x3e>
+  1000c3:	b8 01 00 00 00       	mov    $0x1,%eax
+  1000c8:	31 d2                	xor    %edx,%edx
+  1000ca:	f7 f7                	div    %edi
+  1000cc:	89 c5                	mov    %eax,%ebp
+  1000ce:	89 c8                	mov    %ecx,%eax
+  1000d0:	31 d2                	xor    %edx,%edx
+  1000d2:	f7 f5                	div    %ebp
+  1000d4:	89 c1                	mov    %eax,%ecx
+  1000d6:	89 d8                	mov    %ebx,%eax
+  1000d8:	89 cf                	mov    %ecx,%edi
+  1000da:	f7 f5                	div    %ebp
+  1000dc:	89 fa                	mov    %edi,%edx
+  1000de:	83 c4 1c             	add    $0x1c,%esp
+  1000e1:	5b                   	pop    %ebx
+  1000e2:	5e                   	pop    %esi
+  1000e3:	5f                   	pop    %edi
+  1000e4:	5d                   	pop    %ebp
+  1000e5:	c3                   	ret    
+  1000e6:	8d 76 00             	lea    0x0(%esi),%esi
+  1000e9:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
+  1000f0:	39 ce                	cmp    %ecx,%esi
+  1000f2:	77 7c                	ja     100170 <__udivdi3+0xe0>
+  1000f4:	0f bd fe             	bsr    %esi,%edi
+  1000f7:	83 f7 1f             	xor    $0x1f,%edi
+  1000fa:	0f 84 90 00 00 00    	je     100190 <__udivdi3+0x100>
+  100100:	bd 20 00 00 00       	mov    $0x20,%ebp
+  100105:	8b 5c 24 08          	mov    0x8(%esp),%ebx
+  100109:	29 fd                	sub    %edi,%ebp
+  10010b:	89 f9                	mov    %edi,%ecx
+  10010d:	d3 e6                	shl    %cl,%esi
+  10010f:	89 d8                	mov    %ebx,%eax
+  100111:	89 e9                	mov    %ebp,%ecx
+  100113:	d3 e8                	shr    %cl,%eax
+  100115:	09 f0                	or     %esi,%eax
+  100117:	89 f9                	mov    %edi,%ecx
+  100119:	89 44 24 08          	mov    %eax,0x8(%esp)
+  10011d:	89 d8                	mov    %ebx,%eax
+  10011f:	d3 e0                	shl    %cl,%eax
+  100121:	89 d3                	mov    %edx,%ebx
+  100123:	89 e9                	mov    %ebp,%ecx
+  100125:	d3 eb                	shr    %cl,%ebx
+  100127:	89 f9                	mov    %edi,%ecx
+  100129:	89 de                	mov    %ebx,%esi
+  10012b:	d3 e2                	shl    %cl,%edx
+  10012d:	8b 5c 24 04          	mov    0x4(%esp),%ebx
+  100131:	89 e9                	mov    %ebp,%ecx
+  100133:	d3 eb                	shr    %cl,%ebx
+  100135:	09 da                	or     %ebx,%edx
+  100137:	89 44 24 0c          	mov    %eax,0xc(%esp)
+  10013b:	89 d0                	mov    %edx,%eax
+  10013d:	89 f2                	mov    %esi,%edx
+  10013f:	f7 74 24 08          	divl   0x8(%esp)
+  100143:	89 d6                	mov    %edx,%esi
+  100145:	89 c3                	mov    %eax,%ebx
+  100147:	f7 64 24 0c          	mull   0xc(%esp)
+  10014b:	39 d6                	cmp    %edx,%esi
+  10014d:	72 10                	jb     10015f <__udivdi3+0xcf>
+  10014f:	8b 6c 24 04          	mov    0x4(%esp),%ebp
+  100153:	89 f9                	mov    %edi,%ecx
+  100155:	d3 e5                	shl    %cl,%ebp
+  100157:	39 c5                	cmp    %eax,%ebp
+  100159:	73 55                	jae    1001b0 <__udivdi3+0x120>
+  10015b:	39 d6                	cmp    %edx,%esi
+  10015d:	75 51                	jne    1001b0 <__udivdi3+0x120>
+  10015f:	8d 43 ff             	lea    -0x1(%ebx),%eax
+  100162:	31 ff                	xor    %edi,%edi
+  100164:	89 fa                	mov    %edi,%edx
+  100166:	83 c4 1c             	add    $0x1c,%esp
+  100169:	5b                   	pop    %ebx
+  10016a:	5e                   	pop    %esi
+  10016b:	5f                   	pop    %edi
+  10016c:	5d                   	pop    %ebp
+  10016d:	c3                   	ret    
+  10016e:	66 90                	xchg   %ax,%ax
+  100170:	31 ff                	xor    %edi,%edi
+  100172:	31 c0                	xor    %eax,%eax
+  100174:	89 fa                	mov    %edi,%edx
+  100176:	83 c4 1c             	add    $0x1c,%esp
+  100179:	5b                   	pop    %ebx
+  10017a:	5e                   	pop    %esi
+  10017b:	5f                   	pop    %edi
+  10017c:	5d                   	pop    %ebp
+  10017d:	c3                   	ret    
+  10017e:	66 90                	xchg   %ax,%ax
+  100180:	89 d8                	mov    %ebx,%eax
+  100182:	f7 f7                	div    %edi
+  100184:	31 ff                	xor    %edi,%edi
+  100186:	89 fa                	mov    %edi,%edx
+  100188:	83 c4 1c             	add    $0x1c,%esp
+  10018b:	5b                   	pop    %ebx
+  10018c:	5e                   	pop    %esi
+  10018d:	5f                   	pop    %edi
+  10018e:	5d                   	pop    %ebp
+  10018f:	c3                   	ret    
+  100190:	39 ce                	cmp    %ecx,%esi
+  100192:	72 10                	jb     1001a4 <__udivdi3+0x114>
+  100194:	8b 5c 24 04          	mov    0x4(%esp),%ebx
+  100198:	31 c0                	xor    %eax,%eax
+  10019a:	39 5c 24 08          	cmp    %ebx,0x8(%esp)
+  10019e:	0f 87 38 ff ff ff    	ja     1000dc <__udivdi3+0x4c>
+  1001a4:	b8 01 00 00 00       	mov    $0x1,%eax
+  1001a9:	e9 2e ff ff ff       	jmp    1000dc <__udivdi3+0x4c>
+  1001ae:	66 90                	xchg   %ax,%ax
+  1001b0:	89 d8                	mov    %ebx,%eax
+  1001b2:	31 ff                	xor    %edi,%edi
+  1001b4:	e9 23 ff ff ff       	jmp    1000dc <__udivdi3+0x4c>
+
+001001b9 <main>:
+
+#include <zephyr.h>
+#include <misc/printk.h>
+
+void main(void)
+{
+  1001b9:	55                   	push   %ebp
+  1001ba:	89 e5                	mov    %esp,%ebp
+	printk("Hello World! %s\n", CONFIG_ARCH);
+  1001bc:	68 20 17 10 00       	push   $0x101720
+  1001c1:	68 24 17 10 00       	push   $0x101724
+  1001c6:	e8 42 08 00 00       	call   100a0d <printk>
+  1001cb:	58                   	pop    %eax
+  1001cc:	5a                   	pop    %edx
+}
+  1001cd:	c9                   	leave  
+  1001ce:	c3                   	ret    
+
+001001cf <console_out>:
+ *
+ * @return The character passed as input.
+ */
+
+static int console_out(int c)
+{
+  1001cf:	55                   	push   %ebp
+  1001d0:	89 e5                	mov    %esp,%ebp
+		return c;
+	}
+
+#endif /* CONFIG_UART_CONSOLE_DEBUG_SERVER_HOOKS */
+
+	if ('\n' == c) {
+  1001d2:	83 7d 08 0a          	cmpl   $0xa,0x8(%ebp)
+  1001d6:	75 10                	jne    1001e8 <console_out+0x19>
+		uart_poll_out(uart_console_dev, '\r');
+  1001d8:	a1 00 23 10 00       	mov    0x102300,%eax
+static inline unsigned char uart_poll_out(struct device *dev,
+					  unsigned char out_char)
+{
+	const struct uart_driver_api *api = dev->driver_api;
+
+	return api->poll_out(dev, out_char);
+  1001dd:	8b 50 04             	mov    0x4(%eax),%edx
+  1001e0:	6a 0d                	push   $0xd
+  1001e2:	50                   	push   %eax
+  1001e3:	ff 52 04             	call   *0x4(%edx)
+  1001e6:	59                   	pop    %ecx
+  1001e7:	58                   	pop    %eax
+	}
+	uart_poll_out(uart_console_dev, c);
+  1001e8:	a1 00 23 10 00       	mov    0x102300,%eax
+  1001ed:	0f b6 4d 08          	movzbl 0x8(%ebp),%ecx
+  1001f1:	8b 50 04             	mov    0x4(%eax),%edx
+  1001f4:	51                   	push   %ecx
+  1001f5:	50                   	push   %eax
+  1001f6:	ff 52 04             	call   *0x4(%edx)
+  1001f9:	58                   	pop    %eax
+
+	return c;
+}
+  1001fa:	8b 45 08             	mov    0x8(%ebp),%eax
+  1001fd:	5a                   	pop    %edx
+  1001fe:	c9                   	leave  
+  1001ff:	c3                   	ret    
+
+00100200 <uart_console_hook_install>:
+ *
+ * @return N/A
+ */
+
+void uart_console_hook_install(void)
+{
+  100200:	55                   	push   %ebp
+  100201:	89 e5                	mov    %esp,%ebp
+	__stdout_hook_install(console_out);
+	__printk_hook_install(console_out);
+  100203:	68 cf 01 10 00       	push   $0x1001cf
+  100208:	e8 93 05 00 00       	call   1007a0 <__printk_hook_install>
+  10020d:	58                   	pop    %eax
+}
+  10020e:	c9                   	leave  
+  10020f:	c3                   	ret    
+
+00100210 <uart_console_init>:
+ * @brief Initialize one UART as the console/debug port
+ *
+ * @return 0 if successful, otherwise failed.
+ */
+static int uart_console_init(struct device *arg)
+{
+  100210:	55                   	push   %ebp
+  100211:	89 e5                	mov    %esp,%ebp
+
+	ARG_UNUSED(arg);
+
+	uart_console_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
+  100213:	68 35 17 10 00       	push   $0x101735
+  100218:	e8 17 0c 00 00       	call   100e34 <device_get_binding>
+  10021d:	5a                   	pop    %edx
+  10021e:	a3 00 23 10 00       	mov    %eax,0x102300
+		}
+	}
+	k_busy_wait(1000000);
+#endif
+
+	uart_console_hook_install();
+  100223:	e8 d8 ff ff ff       	call   100200 <uart_console_hook_install>
+
+	return 0;
+}
+  100228:	31 c0                	xor    %eax,%eax
+  10022a:	c9                   	leave  
+  10022b:	c3                   	ret    
+
+0010022c <uart_ns16550_init>:
+ * @param dev UART device struct
+ *
+ * @return 0 if successful, failed othersie
+ */
+static int uart_ns16550_init(struct device *dev)
+{
+  10022c:	55                   	push   %ebp
+  10022d:	89 e5                	mov    %esp,%ebp
+  10022f:	57                   	push   %edi
+  100230:	56                   	push   %esi
+  100231:	53                   	push   %ebx
+  100232:	83 ec 0c             	sub    $0xc,%esp
+  100235:	8b 45 08             	mov    0x8(%ebp),%eax
+	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
+  100238:	8b 78 08             	mov    0x8(%eax),%edi
+
+static ALWAYS_INLINE unsigned int _do_irq_lock(void)
+{
+	unsigned int key;
+
+	__asm__ volatile (
+  10023b:	9c                   	pushf  
+  10023c:	fa                   	cli    
+  10023d:	5e                   	pop    %esi
+	dev_data->iir_cache = 0;
+#endif
+
+	old_level = irq_lock();
+
+	set_baud_rate(dev, dev_data->baud_rate);
+  10023e:	8b 4f 04             	mov    0x4(%edi),%ecx
+	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
+  100241:	8b 58 08             	mov    0x8(%eax),%ebx
+	if ((baud_rate != 0) && (dev_cfg->sys_clk_freq != 0)) {
+  100244:	85 c9                	test   %ecx,%ecx
+  100246:	74 3e                	je     100286 <uart_ns16550_init+0x5a>
+	const struct uart_ns16550_device_config * const dev_cfg = DEV_CFG(dev);
+  100248:	8b 00                	mov    (%eax),%eax
+	if ((baud_rate != 0) && (dev_cfg->sys_clk_freq != 0)) {
+  10024a:	8b 40 08             	mov    0x8(%eax),%eax
+  10024d:	8b 00                	mov    (%eax),%eax
+  10024f:	85 c0                	test   %eax,%eax
+  100251:	74 33                	je     100286 <uart_ns16550_init+0x5a>
+		divisor = (dev_cfg->sys_clk_freq / baud_rate) >> 4;
+  100253:	31 d2                	xor    %edx,%edx
+  100255:	f7 f1                	div    %ecx
+  100257:	89 45 ec             	mov    %eax,-0x14(%ebp)
+		lcr_cache = INBYTE(LCR(dev));
+  10025a:	8b 03                	mov    (%ebx),%eax
+  10025c:	83 c0 03             	add    $0x3,%eax
+  10025f:	89 45 f0             	mov    %eax,-0x10(%ebp)
+static ALWAYS_INLINE
+	uint8_t sys_in8(io_port_t port)
+{
+	uint8_t ret;
+
+	__asm__ volatile("inb	%w1, %b0;\n\t"
+  100262:	89 c2                	mov    %eax,%edx
+  100264:	ec                   	in     (%dx),%al
+  100265:	88 45 eb             	mov    %al,-0x15(%ebp)
+	__asm__ volatile("outb	%b0, %w1;\n\t"
+  100268:	b0 80                	mov    $0x80,%al
+  10026a:	ee                   	out    %al,(%dx)
+		divisor = (dev_cfg->sys_clk_freq / baud_rate) >> 4;
+  10026b:	8b 45 ec             	mov    -0x14(%ebp),%eax
+  10026e:	8b 13                	mov    (%ebx),%edx
+  100270:	c1 e8 04             	shr    $0x4,%eax
+  100273:	ee                   	out    %al,(%dx)
+		OUTBYTE(BRDH(dev), (unsigned char)((divisor >> 8) & 0xff));
+  100274:	8b 45 ec             	mov    -0x14(%ebp),%eax
+  100277:	42                   	inc    %edx
+  100278:	c1 e8 0c             	shr    $0xc,%eax
+  10027b:	ee                   	out    %al,(%dx)
+  10027c:	8a 45 eb             	mov    -0x15(%ebp),%al
+  10027f:	8b 55 f0             	mov    -0x10(%ebp),%edx
+  100282:	ee                   	out    %al,(%dx)
+		dev_data->baud_rate = baud_rate;
+  100283:	89 4b 04             	mov    %ecx,0x4(%ebx)
+#ifdef CONFIG_UART_NS16550_DLF
+	set_dlf(dev, dev_data->dlf);
+#endif
+
+	/* 8 data bits, 1 stop bit, no parity, clear DLAB */
+	OUTBYTE(LCR(dev), LCR_CS8 | LCR_1_STB | LCR_PDIS);
+  100286:	8b 0b                	mov    (%ebx),%ecx
+  100288:	b0 03                	mov    $0x3,%al
+  10028a:	8d 51 03             	lea    0x3(%ecx),%edx
+  10028d:	ee                   	out    %al,(%dx)
+
+	mdc = MCR_OUT2 | MCR_RTS | MCR_DTR;
+	if ((dev_data->options & UART_OPTION_AFCE) == UART_OPTION_AFCE)
+  10028e:	8a 47 08             	mov    0x8(%edi),%al
+		mdc |= MCR_AFCE;
+
+	OUTBYTE(MDC(dev), mdc);
+  100291:	8d 51 04             	lea    0x4(%ecx),%edx
+	if ((dev_data->options & UART_OPTION_AFCE) == UART_OPTION_AFCE)
+  100294:	83 e0 01             	and    $0x1,%eax
+		mdc |= MCR_AFCE;
+  100297:	3c 01                	cmp    $0x1,%al
+  100299:	19 c0                	sbb    %eax,%eax
+  10029b:	83 e0 e0             	and    $0xffffffe0,%eax
+  10029e:	83 c0 2b             	add    $0x2b,%eax
+  1002a1:	ee                   	out    %al,(%dx)
+  1002a2:	b0 87                	mov    $0x87,%al
+	/*
+	 * Program FIFO: enabled, mode 0 (set for compatibility with quark),
+	 * generate the interrupt at 8th byte
+	 * Clear TX and RX FIFO
+	 */
+	OUTBYTE(FCR(dev),
+  1002a4:	8d 51 02             	lea    0x2(%ecx),%edx
+  1002a7:	ee                   	out    %al,(%dx)
+	__asm__ volatile("inb	%w1, %b0;\n\t"
+  1002a8:	89 ca                	mov    %ecx,%edx
+  1002aa:	ec                   	in     (%dx),%al
+	__asm__ volatile("outb	%b0, %w1;\n\t"
+  1002ab:	31 c0                	xor    %eax,%eax
+
+	/* clear the port */
+	INBYTE(RDR(dev));
+
+	/* disable interrupts  */
+	OUTBYTE(IER(dev), 0x00);
+  1002ad:	8d 51 01             	lea    0x1(%ecx),%edx
+  1002b0:	ee                   	out    %al,(%dx)
+ *
+ */
+
+static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
+{
+	if (!(key & 0x200)) {
+  1002b1:	0f ba e6 09          	bt     $0x9,%esi
+  1002b5:	73 01                	jae    1002b8 <uart_ns16550_init+0x8c>
+	__asm__ volatile (
+  1002b7:	fb                   	sti    
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	DEV_CFG(dev)->irq_config_func(dev);
+#endif
+
+	return 0;
+}
+  1002b8:	83 c4 0c             	add    $0xc,%esp
+  1002bb:	31 c0                	xor    %eax,%eax
+  1002bd:	5b                   	pop    %ebx
+  1002be:	5e                   	pop    %esi
+  1002bf:	5f                   	pop    %edi
+  1002c0:	5d                   	pop    %ebp
+  1002c1:	c3                   	ret    
+
+001002c2 <uart_ns16550_poll_in>:
+ * @param c Pointer to character
+ *
+ * @return 0 if a character arrived, -1 if the input buffer if empty.
+ */
+static int uart_ns16550_poll_in(struct device *dev, unsigned char *c)
+{
+  1002c2:	55                   	push   %ebp
+  1002c3:	89 e5                	mov    %esp,%ebp
+	if ((INBYTE(LSR(dev)) & LSR_RXRDY) == 0x00)
+  1002c5:	8b 45 08             	mov    0x8(%ebp),%eax
+  1002c8:	8b 40 08             	mov    0x8(%eax),%eax
+  1002cb:	8b 08                	mov    (%eax),%ecx
+  1002cd:	8d 51 05             	lea    0x5(%ecx),%edx
+	__asm__ volatile("inb	%w1, %b0;\n\t"
+  1002d0:	ec                   	in     (%dx),%al
+  1002d1:	88 c2                	mov    %al,%dl
+  1002d3:	80 e2 01             	and    $0x1,%dl
+  1002d6:	74 0c                	je     1002e4 <uart_ns16550_poll_in+0x22>
+  1002d8:	89 ca                	mov    %ecx,%edx
+  1002da:	ec                   	in     (%dx),%al
+		return (-1);
+
+	/* got a character */
+	*c = INBYTE(RDR(dev));
+  1002db:	8b 55 0c             	mov    0xc(%ebp),%edx
+  1002de:	88 02                	mov    %al,(%edx)
+
+	return 0;
+  1002e0:	31 c0                	xor    %eax,%eax
+  1002e2:	eb 03                	jmp    1002e7 <uart_ns16550_poll_in+0x25>
+  1002e4:	83 c8 ff             	or     $0xffffffff,%eax
+}
+  1002e7:	5d                   	pop    %ebp
+  1002e8:	c3                   	ret    
+
+001002e9 <uart_ns16550_poll_out>:
+ *
+ * @return Sent character
+ */
+static unsigned char uart_ns16550_poll_out(struct device *dev,
+					   unsigned char c)
+{
+  1002e9:	55                   	push   %ebp
+  1002ea:	89 e5                	mov    %esp,%ebp
+  1002ec:	53                   	push   %ebx
+	/* wait for transmitter to ready to accept a character */
+	while ((INBYTE(LSR(dev)) & LSR_TEMT) == 0)
+  1002ed:	8b 45 08             	mov    0x8(%ebp),%eax
+{
+  1002f0:	8b 4d 0c             	mov    0xc(%ebp),%ecx
+	while ((INBYTE(LSR(dev)) & LSR_TEMT) == 0)
+  1002f3:	8b 40 08             	mov    0x8(%eax),%eax
+  1002f6:	8b 18                	mov    (%eax),%ebx
+  1002f8:	8d 53 05             	lea    0x5(%ebx),%edx
+  1002fb:	ec                   	in     (%dx),%al
+  1002fc:	a8 40                	test   $0x40,%al
+  1002fe:	74 fb                	je     1002fb <uart_ns16550_poll_out+0x12>
+	__asm__ volatile("outb	%b0, %w1;\n\t"
+  100300:	88 c8                	mov    %cl,%al
+  100302:	89 da                	mov    %ebx,%edx
+  100304:	ee                   	out    %al,(%dx)
+		;
+
+	OUTBYTE(THR(dev), c);
+
+	return c;
+}
+  100305:	5b                   	pop    %ebx
+  100306:	5d                   	pop    %ebp
+  100307:	c3                   	ret    
+
+00100308 <uart_ns16550_err_check>:
+ *
+ * @return one of UART_ERROR_OVERRUN, UART_ERROR_PARITY, UART_ERROR_FRAMING,
+ * UART_ERROR_BREAK if an error was detected, 0 otherwise.
+ */
+static int uart_ns16550_err_check(struct device *dev)
+{
+  100308:	55                   	push   %ebp
+  100309:	89 e5                	mov    %esp,%ebp
+	return (INBYTE(LSR(dev)) & LSR_EOB_MASK) >> 1;
+  10030b:	8b 45 08             	mov    0x8(%ebp),%eax
+  10030e:	8b 40 08             	mov    0x8(%eax),%eax
+  100311:	8b 00                	mov    (%eax),%eax
+  100313:	8d 50 05             	lea    0x5(%eax),%edx
+	__asm__ volatile("inb	%w1, %b0;\n\t"
+  100316:	ec                   	in     (%dx),%al
+  100317:	d1 e8                	shr    %eax
+}
+  100319:	5d                   	pop    %ebp
+	return (INBYTE(LSR(dev)) & LSR_EOB_MASK) >> 1;
+  10031a:	83 e0 0f             	and    $0xf,%eax
+}
+  10031d:	c3                   	ret    
+
+0010031e <_timer_int_handler>:
+ * is pushed onto the kernel stack.
+ *
+ * @return N/A
+ */
+void _timer_int_handler(void *unused)
+{
+  10031e:	55                   	push   %ebp
+	/*
+	 * one more tick has occurred -- don't need to do anything special since
+	 * timer is already configured to interrupt on the following tick
+	 */
+
+	_sys_clock_tick_announce();
+  10031f:	a1 8c 22 10 00       	mov    0x10228c,%eax
+{
+  100324:	89 e5                	mov    %esp,%ebp
+	_sys_clock_tick_announce();
+  100326:	89 45 08             	mov    %eax,0x8(%ebp)
+	programmed_ticks = 1;
+
+	_sys_clock_final_tick_announce();
+#endif /* !CONFIG_TICKLESS_IDLE */
+
+}
+  100329:	5d                   	pop    %ebp
+	_sys_clock_tick_announce();
+  10032a:	e9 56 0e 00 00       	jmp    101185 <_nano_sys_clock_tick_announce>
+
+0010032f <_sys_clock_driver_init>:
+ *
+ * @return 0
+ */
+
+int _sys_clock_driver_init(struct device *device)
+{
+  10032f:	55                   	push   %ebp
+  100330:	89 e5                	mov    %esp,%ebp
+  100332:	57                   	push   %edi
+  100333:	56                   	push   %esi
+  100334:	53                   	push   %ebx
+	/*
+	 * Initial state of HPET is unknown, so put it back in a reset-like
+	 * state (i.e. set main counter to 0 and disable interrupts)
+	 */
+
+	*_HPET_GENERAL_CONFIG &= ~HPET_ENABLE_CNF;
+  100335:	a1 10 00 d0 fe       	mov    0xfed00010,%eax
+	/*
+	 * Convert the 'sys_clock_us_per_tick' value
+	 * from microseconds to femptoseconds
+	 */
+
+	tickFempto = (uint64_t)sys_clock_us_per_tick * 1000000000;
+  10033a:	be 00 ca 9a 3b       	mov    $0x3b9aca00,%esi
+	*_HPET_GENERAL_CONFIG &= ~HPET_ENABLE_CNF;
+  10033f:	83 e0 fe             	and    $0xfffffffe,%eax
+  100342:	a3 10 00 d0 fe       	mov    %eax,0xfed00010
+	*_HPET_MAIN_COUNTER_VALUE = 0;
+  100347:	c7 05 f0 00 d0 fe 00 	movl   $0x0,0xfed000f0
+  10034e:	00 00 00 
+	tickFempto = (uint64_t)sys_clock_us_per_tick * 1000000000;
+  100351:	89 f0                	mov    %esi,%eax
+	*_HPET_MAIN_COUNTER_VALUE = 0;
+  100353:	c7 05 f4 00 d0 fe 00 	movl   $0x0,0xfed000f4
+  10035a:	00 00 00 
+	tickFempto = (uint64_t)sys_clock_us_per_tick * 1000000000;
+  10035d:	f7 2d 98 22 10 00    	imull  0x102298
+	 * to determine the frequency of clock applied to the HPET device.
+	 */
+
+	/* read the clock period: units are fempto (10^-15) seconds */
+
+	hpetClockPeriod = HPET_COUNTER_CLK_PERIOD(*_HPET_GENERAL_CAPS);
+  100363:	8b 0d 00 00 d0 fe    	mov    0xfed00000,%ecx
+  100369:	8b 1d 04 00 d0 fe    	mov    0xfed00004,%ebx
+  10036f:	89 d9                	mov    %ebx,%ecx
+  100371:	31 db                	xor    %ebx,%ebx
+	/*
+	 * compute value for the comparator register to achieve
+	 * 'sys_clock_us_per_tick' period
+	 */
+
+	counter_load_value = (uint32_t)(tickFempto / hpetClockPeriod);
+  100373:	53                   	push   %ebx
+  100374:	51                   	push   %ecx
+  100375:	52                   	push   %edx
+  100376:	50                   	push   %eax
+  100377:	e8 14 fd ff ff       	call   100090 <__udivdi3>
+  10037c:	31 db                	xor    %ebx,%ebx
+	       (uint32_t)(*_HPET_TIMER0_CONFIG_CAPS >> 32));
+
+	/* Initialize sys_clock_hw_cycles_per_tick/sec */
+
+	sys_clock_hw_cycles_per_tick = counter_load_value;
+	sys_clock_hw_cycles_per_sec = sys_clock_hw_cycles_per_tick *
+  10037e:	6b d0 64             	imul   $0x64,%eax,%edx
+	sys_clock_hw_cycles_per_tick = counter_load_value;
+  100381:	a3 94 22 10 00       	mov    %eax,0x102294
+	sys_clock_hw_cycles_per_sec = sys_clock_hw_cycles_per_tick *
+  100386:	89 15 90 22 10 00    	mov    %edx,0x102290
+	/*
+	 * Configure HPET replace legacy 8254 timer.
+	 * In this case the timer0 interrupt is routed to IRQ2
+	 * and legacy timer generates no interrupts
+	 */
+	*_HPET_GENERAL_CONFIG |= HPET_LEGACY_RT_CNF;
+  10038c:	8b 15 10 00 d0 fe    	mov    0xfed00010,%edx
+	counter_load_value = (uint32_t)(tickFempto / hpetClockPeriod);
+  100392:	83 c4 10             	add    $0x10,%esp
+	*_HPET_GENERAL_CONFIG |= HPET_LEGACY_RT_CNF;
+  100395:	83 ca 02             	or     $0x2,%edx
+  100398:	89 15 10 00 d0 fe    	mov    %edx,0xfed00010
+	 * Setting 32-bit mode during the first load of the comparator
+	 * value is required to work around some hardware that otherwise
+	 * does not work properly.
+	 */
+
+	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_TYPE_CNF | HPET_Tn_32MODE_CNF;
+  10039e:	8b 35 00 01 d0 fe    	mov    0xfed00100,%esi
+  1003a4:	8b 3d 04 01 d0 fe    	mov    0xfed00104,%edi
+  1003aa:	89 f2                	mov    %esi,%edx
+  1003ac:	81 ca 08 01 00 00    	or     $0x108,%edx
+  1003b2:	89 15 00 01 d0 fe    	mov    %edx,0xfed00100
+  1003b8:	89 3d 04 01 d0 fe    	mov    %edi,0xfed00104
+
+	/*
+	 * Set the comparator register for timer0.  The write to the comparator
+	 * register is allowed due to setting the HPET_Tn_VAL_SET_CNF bit.
+	 */
+	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_VAL_SET_CNF;
+  1003be:	8b 35 00 01 d0 fe    	mov    0xfed00100,%esi
+  1003c4:	8b 3d 04 01 d0 fe    	mov    0xfed00104,%edi
+  1003ca:	89 f2                	mov    %esi,%edx
+  1003cc:	83 ca 40             	or     $0x40,%edx
+  1003cf:	89 15 00 01 d0 fe    	mov    %edx,0xfed00100
+  1003d5:	89 3d 04 01 d0 fe    	mov    %edi,0xfed00104
+	*_HPET_TIMER0_COMPARATOR = counter_load_value;
+  1003db:	a3 08 01 d0 fe       	mov    %eax,0xfed00108
+  1003e0:	89 1d 0c 01 d0 fe    	mov    %ebx,0xfed0010c
+	/*
+	 * After the comparator is loaded, 32-bit mode can be safely
+	 * switched off
+	 */
+	*_HPET_TIMER0_CONFIG_CAPS &= ~HPET_Tn_32MODE_CNF;
+  1003e6:	8b 0d 00 01 d0 fe    	mov    0xfed00100,%ecx
+  1003ec:	8b 1d 04 01 d0 fe    	mov    0xfed00104,%ebx
+  1003f2:	89 cf                	mov    %ecx,%edi
+  1003f4:	81 e7 ff fe ff ff    	and    $0xfffffeff,%edi
+  1003fa:	89 3d 00 01 d0 fe    	mov    %edi,0xfed00100
+  100400:	89 1d 04 01 d0 fe    	mov    %ebx,0xfed00104
+	 * this case program leaves the IRQ fields blank.
+	 */
+
+	*_HPET_TIMER0_CONFIG_CAPS =
+#if CONFIG_HPET_TIMER_IRQ < 32
+		(*_HPET_TIMER0_CONFIG_CAPS & ~HPET_Tn_INT_ROUTE_CNF_MASK) |
+  100406:	a1 00 01 d0 fe       	mov    0xfed00100,%eax
+  10040b:	8b 15 04 01 d0 fe    	mov    0xfed00104,%edx
+  100411:	89 c3                	mov    %eax,%ebx
+  100413:	80 e7 c1             	and    $0xc1,%bh
+  100416:	80 cf 04             	or     $0x4,%bh
+	*_HPET_TIMER0_CONFIG_CAPS =
+  100419:	89 1d 00 01 d0 fe    	mov    %ebx,0xfed00100
+  10041f:	89 15 04 01 d0 fe    	mov    %edx,0xfed00104
+  100425:	0f b6 05 f2 21 10 00 	movzbl 0x1021f2,%eax
+ * @returns: N/A
+ */
+static inline void _irq_controller_irq_config(unsigned int vector,
+					      unsigned int irq, uint32_t flags)
+{
+	__irq_controller_irq_config(vector, irq, flags);
+  10042c:	6a 00                	push   $0x0
+  10042e:	6a 02                	push   $0x2
+  100430:	50                   	push   %eax
+  100431:	e8 7b 01 00 00       	call   1005b1 <__irq_controller_irq_config>
+  100436:	83 c4 0c             	add    $0xc,%esp
+	IRQ_CONNECT(CONFIG_HPET_TIMER_IRQ, CONFIG_HPET_TIMER_IRQ_PRIORITY,
+		   _timer_int_handler, 0, HPET_IOAPIC_FLAGS);
+
+	/* enable the IRQ in the interrupt controller */
+
+	irq_enable(CONFIG_HPET_TIMER_IRQ);
+  100439:	6a 02                	push   $0x2
+  10043b:	e8 97 01 00 00       	call   1005d7 <_arch_irq_enable>
+  100440:	58                   	pop    %eax
+
+	/* enable the HPET generally, and timer0 specifically */
+
+	*_HPET_GENERAL_CONFIG |= HPET_ENABLE_CNF;
+  100441:	a1 10 00 d0 fe       	mov    0xfed00010,%eax
+  100446:	83 c8 01             	or     $0x1,%eax
+  100449:	a3 10 00 d0 fe       	mov    %eax,0xfed00010
+	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_INT_ENB_CNF;
+
+	return 0;
+}
+  10044e:	31 c0                	xor    %eax,%eax
+	*_HPET_TIMER0_CONFIG_CAPS |= HPET_Tn_INT_ENB_CNF;
+  100450:	8b 0d 00 01 d0 fe    	mov    0xfed00100,%ecx
+  100456:	8b 1d 04 01 d0 fe    	mov    0xfed00104,%ebx
+  10045c:	89 cf                	mov    %ecx,%edi
+  10045e:	83 cf 04             	or     $0x4,%edi
+  100461:	89 3d 00 01 d0 fe    	mov    %edi,0xfed00100
+  100467:	89 1d 04 01 d0 fe    	mov    %ebx,0xfed00104
+}
+  10046d:	8d 65 f4             	lea    -0xc(%ebp),%esp
+  100470:	5b                   	pop    %ebx
+  100471:	5e                   	pop    %esi
+  100472:	5f                   	pop    %edi
+  100473:	5d                   	pop    %ebp
+  100474:	c3                   	ret    
+
+00100475 <_timer_int_handler_irq2_stub>:
+	IRQ_CONNECT(CONFIG_HPET_TIMER_IRQ, CONFIG_HPET_TIMER_IRQ_PRIORITY,
+  100475:	6a 00                	push   $0x0
+  100477:	68 1e 03 10 00       	push   $0x10031e
+  10047c:	e9 68 06 00 00       	jmp    100ae9 <_interrupt_enter>
+
+00100481 <_i8259_init>:
+ *
+ * @return N/A
+ */
+
+int _i8259_init(struct device *unused)
+{
+  100481:	55                   	push   %ebp
+	__asm__ volatile("outb	%b0, %w1;\n\t"
+  100482:	b0 ff                	mov    $0xff,%al
+  100484:	89 e5                	mov    %esp,%ebp
+  100486:	e6 a1                	out    %al,$0xa1
+  100488:	e6 21                	out    %al,$0x21
+	ARG_UNUSED(unused);
+	sys_out8(PIC_DISABLE, PIC_PORT2(PIC_SLAVE_BASE_ADRS));
+	sys_out8(PIC_DISABLE, PIC_PORT2(PIC_MASTER_BASE_ADRS));
+	return 0;
+}
+  10048a:	31 c0                	xor    %eax,%eax
+  10048c:	5d                   	pop    %ebp
+  10048d:	c3                   	ret    
+
+0010048e <_loapic_init>:
+ * @return N/A
+ *
+ */
+
+static int _loapic_init(struct device *unused)
+{
+  10048e:	55                   	push   %ebp
+  10048f:	89 e5                	mov    %esp,%ebp
+static ALWAYS_INLINE
+	uint32_t sys_read32(mm_reg_t addr)
+{
+	uint32_t ret;
+
+	__asm__ volatile("movl	%1, %0;\n\t"
+  100491:	a1 f0 00 e0 fe       	mov    0xfee000f0,%eax
+	ARG_UNUSED(unused);
+	int32_t loApicMaxLvt; /* local APIC Max LVT */
+
+	/* enable the Local APIC */
+	sys_write32(sys_read32(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_SVR)
+  100496:	80 cc 01             	or     $0x1,%ah
+	__asm__ volatile("movl	%0, %1;\n\t"
+  100499:	a3 f0 00 e0 fe       	mov    %eax,0xfee000f0
+		    | LOAPIC_ENABLE, CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_SVR);
+
+	loApicMaxLvt = (*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_VER) &
+  10049e:	a1 30 00 e0 fe       	mov    0xfee00030,%eax
+			LOAPIC_MAXLVT_MASK) >> 16;
+
+	/* reset the DFR, TPR, TIMER_CONFIG, and TIMER_ICR */
+
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_DFR) =
+  1004a3:	c7 05 e0 00 e0 fe ff 	movl   $0xffffffff,0xfee000e0
+  1004aa:	ff ff ff 
+			LOAPIC_MAXLVT_MASK) >> 16;
+  1004ad:	c1 f8 10             	sar    $0x10,%eax
+		(int)0xffffffff;
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TPR) = (int)0x0;
+  1004b0:	c7 05 80 00 e0 fe 00 	movl   $0x0,0xfee00080
+  1004b7:	00 00 00 
+	*(volatile int *) (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_CONFIG) =
+  1004ba:	c7 05 e0 03 e0 fe 00 	movl   $0x0,0xfee003e0
+  1004c1:	00 00 00 
+		(int)0x0;
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER_ICR) = (int)0x0;
+  1004c4:	c7 05 80 03 e0 fe 00 	movl   $0x0,0xfee00380
+  1004cb:	00 00 00 
+	/* program Local Vector Table for the Virtual Wire Mode */
+
+	/* set LINT0: extInt, high-polarity, edge-trigger, not-masked */
+
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_LINT0) =
+		(*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_LINT0) &
+  1004ce:	8b 15 50 03 e0 fe    	mov    0xfee00350,%edx
+  1004d4:	81 e2 ff 58 fe ff    	and    $0xfffe58ff,%edx
+		 ~(LOAPIC_MODE | LOAPIC_LOW | LOAPIC_LEVEL | LOAPIC_LVT_MASKED)) |
+  1004da:	80 ce 07             	or     $0x7,%dh
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_LINT0) =
+  1004dd:	89 15 50 03 e0 fe    	mov    %edx,0xfee00350
+		(LOAPIC_EXT | LOAPIC_HIGH | LOAPIC_EDGE);
+
+	/* set LINT1: NMI, high-polarity, edge-trigger, not-masked */
+
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_LINT1) =
+		(*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_LINT1) &
+  1004e3:	8b 15 60 03 e0 fe    	mov    0xfee00360,%edx
+  1004e9:	81 e2 ff 58 fe ff    	and    $0xfffe58ff,%edx
+		 ~(LOAPIC_MODE | LOAPIC_LOW | LOAPIC_LEVEL | LOAPIC_LVT_MASKED)) |
+  1004ef:	80 ce 04             	or     $0x4,%dh
+	loApicMaxLvt = (*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_VER) &
+  1004f2:	0f b6 c0             	movzbl %al,%eax
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_LINT1) =
+  1004f5:	89 15 60 03 e0 fe    	mov    %edx,0xfee00360
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER) =
+		LOAPIC_LVT_MASKED;
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_ERROR) =
+		LOAPIC_LVT_MASKED;
+
+	if (loApicMaxLvt >= LOAPIC_LVT_P6)
+  1004fb:	83 f8 03             	cmp    $0x3,%eax
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER) =
+  1004fe:	c7 05 20 03 e0 fe 00 	movl   $0x10000,0xfee00320
+  100505:	00 01 00 
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_ERROR) =
+  100508:	c7 05 70 03 e0 fe 00 	movl   $0x10000,0xfee00370
+  10050f:	00 01 00 
+	if (loApicMaxLvt >= LOAPIC_LVT_P6)
+  100512:	7e 19                	jle    10052d <_loapic_init+0x9f>
+		*(volatile int *) (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_PMC) =
+  100514:	c7 05 40 03 e0 fe 00 	movl   $0x10000,0xfee00340
+  10051b:	00 01 00 
+			LOAPIC_LVT_MASKED;
+
+	if (loApicMaxLvt >= LOAPIC_LVT_PENTIUM4)
+  10051e:	83 f8 04             	cmp    $0x4,%eax
+  100521:	74 0a                	je     10052d <_loapic_init+0x9f>
+		*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_THERMAL) =
+  100523:	c7 05 30 03 e0 fe 00 	movl   $0x10000,0xfee00330
+  10052a:	00 01 00 
+
+	/* discard a pending interrupt if any */
+#if CONFIG_EOI_FORWARDING_BUG
+	_lakemont_eoi();
+#else
+	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
+  10052d:	c7 05 b0 00 e0 fe 00 	movl   $0x0,0xfee000b0
+  100534:	00 00 00 
+#endif
+
+	return 0;
+}
+  100537:	31 c0                	xor    %eax,%eax
+  100539:	5d                   	pop    %ebp
+  10053a:	c3                   	ret    
+
+0010053b <_loapic_int_vec_set>:
+ */
+
+void _loapic_int_vec_set(unsigned int irq, /* IRQ number of the interrupt */
+				  unsigned int vector /* vector to copy into the LVT */
+				  )
+{
+  10053b:	55                   	push   %ebp
+  10053c:	89 e5                	mov    %esp,%ebp
+	 *
+	 * It's assumed that LVTs are spaced by 0x10 bytes
+	 */
+
+	pLvt = (volatile int *)
+			(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER + (irq * 0x10));
+  10053e:	8b 45 08             	mov    0x8(%ebp),%eax
+  100541:	05 32 00 ee 0f       	add    $0xfee0032,%eax
+  100546:	c1 e0 04             	shl    $0x4,%eax
+	__asm__ volatile (
+  100549:	9c                   	pushf  
+  10054a:	fa                   	cli    
+  10054b:	59                   	pop    %ecx
+
+	/* update the 'vector' bits in the LVT */
+
+	oldLevel = irq_lock();
+	*pLvt = (*pLvt & ~LOAPIC_VECTOR) | vector;
+  10054c:	8b 10                	mov    (%eax),%edx
+  10054e:	30 d2                	xor    %dl,%dl
+  100550:	0b 55 0c             	or     0xc(%ebp),%edx
+  100553:	0f ba e1 09          	bt     $0x9,%ecx
+  100557:	89 10                	mov    %edx,(%eax)
+  100559:	73 01                	jae    10055c <_loapic_int_vec_set+0x21>
+	__asm__ volatile (
+  10055b:	fb                   	sti    
+	irq_unlock(oldLevel);
+}
+  10055c:	5d                   	pop    %ebp
+  10055d:	c3                   	ret    
+
+0010055e <_loapic_irq_enable>:
+ *
+ * @return N/A
+ */
+
+void _loapic_irq_enable(unsigned int irq)
+{
+  10055e:	55                   	push   %ebp
+  10055f:	89 e5                	mov    %esp,%ebp
+	 * See the comments in _LoApicLvtVecSet() regarding IRQ to LVT mappings
+	 * and ths assumption concerning LVT spacing.
+	 */
+
+	pLvt = (volatile int *)
+		(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_TIMER + (irq * 0x10));
+  100561:	8b 45 08             	mov    0x8(%ebp),%eax
+  100564:	05 32 00 ee 0f       	add    $0xfee0032,%eax
+  100569:	c1 e0 04             	shl    $0x4,%eax
+	__asm__ volatile (
+  10056c:	9c                   	pushf  
+  10056d:	fa                   	cli    
+  10056e:	59                   	pop    %ecx
+
+	/* clear the mask bit in the LVT */
+
+	oldLevel = irq_lock();
+	*pLvt = *pLvt & ~LOAPIC_LVT_MASKED;
+  10056f:	8b 10                	mov    (%eax),%edx
+  100571:	81 e2 ff ff fe ff    	and    $0xfffeffff,%edx
+  100577:	0f ba e1 09          	bt     $0x9,%ecx
+  10057b:	89 10                	mov    %edx,(%eax)
+  10057d:	73 01                	jae    100580 <_loapic_irq_enable+0x22>
+	__asm__ volatile (
+  10057f:	fb                   	sti    
+	irq_unlock(oldLevel);
+}
+  100580:	5d                   	pop    %ebp
+  100581:	c3                   	ret    
+
+00100582 <__irq_controller_isr_vector_get>:
+ *
+ * @return The vector of the interrupt that is currently being processed, or -1
+ * if no IRQ is being serviced.
+ */
+int __irq_controller_isr_vector_get(void)
+{
+  100582:	55                   	push   %ebp
+  100583:	b9 70 01 e0 fe       	mov    $0xfee00170,%ecx
+  100588:	89 e5                	mov    %esp,%ebp
+	int pReg, block;
+
+	/* Block 0 bits never lit up as these are all exception or reserved
+	 * vectors
+	 */
+	for (block = 7; likely(block > 0); block--) {
+  10058a:	b8 07 00 00 00       	mov    $0x7,%eax
+	__asm__ volatile("movl	%1, %0;\n\t"
+  10058f:	8b 11                	mov    (%ecx),%edx
+		pReg = sys_read32(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_ISR +
+				  (block * 0x10));
+		if (pReg) {
+  100591:	85 d2                	test   %edx,%edx
+  100593:	74 11                	je     1005a6 <__irq_controller_isr_vector_get+0x24>
+	__asm__ volatile (
+  100595:	0f bd d2             	bsr    %edx,%edx
+  100598:	75 05                	jne    10059f <__irq_controller_isr_vector_get+0x1d>
+  10059a:	ba ff ff ff ff       	mov    $0xffffffff,%edx
+			return (block * 32) + (find_msb_set(pReg) - 1);
+  10059f:	c1 e0 05             	shl    $0x5,%eax
+  1005a2:	01 d0                	add    %edx,%eax
+  1005a4:	eb 09                	jmp    1005af <__irq_controller_isr_vector_get+0x2d>
+  1005a6:	83 e9 10             	sub    $0x10,%ecx
+	for (block = 7; likely(block > 0); block--) {
+  1005a9:	48                   	dec    %eax
+  1005aa:	75 e3                	jne    10058f <__irq_controller_isr_vector_get+0xd>
+		}
+
+	}
+	return -1;
+  1005ac:	83 c8 ff             	or     $0xffffffff,%eax
+}
+  1005af:	5d                   	pop    %ebp
+  1005b0:	c3                   	ret    
+
+001005b1 <__irq_controller_irq_config>:
+ * @param flags interrupt flags
+ *
+ */
+void __irq_controller_irq_config(unsigned int vector, unsigned int irq,
+				 uint32_t flags)
+{
+  1005b1:	55                   	push   %ebp
+  1005b2:	89 e5                	mov    %esp,%ebp
+  1005b4:	8b 45 0c             	mov    0xc(%ebp),%eax
+  1005b7:	8b 55 08             	mov    0x8(%ebp),%edx
+	__ASSERT(irq >= 0 && irq <= HARDWARE_IRQ_LIMIT, "invalid irq line");
+
+	if (IS_IOAPIC_IRQ(irq)) {
+		_ioapic_irq_set(irq, vector, flags);
+  1005ba:	89 55 0c             	mov    %edx,0xc(%ebp)
+	if (IS_IOAPIC_IRQ(irq)) {
+  1005bd:	83 f8 17             	cmp    $0x17,%eax
+  1005c0:	77 09                	ja     1005cb <__irq_controller_irq_config+0x1a>
+		_ioapic_irq_set(irq, vector, flags);
+  1005c2:	89 45 08             	mov    %eax,0x8(%ebp)
+	} else {
+		_loapic_int_vec_set(irq - LOAPIC_IRQ_BASE, vector);
+	}
+}
+  1005c5:	5d                   	pop    %ebp
+		_ioapic_irq_set(irq, vector, flags);
+  1005c6:	e9 af 00 00 00       	jmp    10067a <_ioapic_irq_set>
+		_loapic_int_vec_set(irq - LOAPIC_IRQ_BASE, vector);
+  1005cb:	83 e8 18             	sub    $0x18,%eax
+  1005ce:	89 45 08             	mov    %eax,0x8(%ebp)
+}
+  1005d1:	5d                   	pop    %ebp
+		_loapic_int_vec_set(irq - LOAPIC_IRQ_BASE, vector);
+  1005d2:	e9 64 ff ff ff       	jmp    10053b <_loapic_int_vec_set>
+
+001005d7 <_arch_irq_enable>:
+ * virtualization.
+ *
+ * @return N/A
+ */
+void _arch_irq_enable(unsigned int irq)
+{
+  1005d7:	55                   	push   %ebp
+  1005d8:	89 e5                	mov    %esp,%ebp
+  1005da:	8b 45 08             	mov    0x8(%ebp),%eax
+	if (IS_IOAPIC_IRQ(irq)) {
+  1005dd:	83 f8 17             	cmp    $0x17,%eax
+  1005e0:	77 06                	ja     1005e8 <_arch_irq_enable+0x11>
+		_ioapic_irq_enable(irq);
+	} else {
+		_loapic_irq_enable(irq - LOAPIC_IRQ_BASE);
+	}
+}
+  1005e2:	5d                   	pop    %ebp
+		_ioapic_irq_enable(irq);
+  1005e3:	e9 7f 00 00 00       	jmp    100667 <_ioapic_irq_enable>
+		_loapic_irq_enable(irq - LOAPIC_IRQ_BASE);
+  1005e8:	83 e8 18             	sub    $0x18,%eax
+  1005eb:	89 45 08             	mov    %eax,0x8(%ebp)
+}
+  1005ee:	5d                   	pop    %ebp
+		_loapic_irq_enable(irq - LOAPIC_IRQ_BASE);
+  1005ef:	e9 6a ff ff ff       	jmp    10055e <_loapic_irq_enable>
+
+001005f4 <__IoApicSet>:
+ * @param offset Register offset (8 bits)
+ * @param value Value to set the register
+ * @return N/A
+ */
+static void __IoApicSet(int32_t offset, uint32_t value)
+{
+  1005f4:	55                   	push   %ebp
+  1005f5:	89 e5                	mov    %esp,%ebp
+	__asm__ volatile (
+  1005f7:	9c                   	pushf  
+  1005f8:	fa                   	cli    
+  1005f9:	59                   	pop    %ecx
+  1005fa:	0f ba e1 09          	bt     $0x9,%ecx
+
+	/* lock interrupts to ensure indirect addressing works "atomically" */
+
+	key = irq_lock();
+
+	*(volatile char *)(CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_IND) = (char)offset;
+  1005fe:	a2 00 00 c0 fe       	mov    %al,0xfec00000
+	*((volatile uint32_t *)(CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_DATA)) = value;
+  100603:	89 15 10 00 c0 fe    	mov    %edx,0xfec00010
+  100609:	73 01                	jae    10060c <__IoApicSet+0x18>
+	__asm__ volatile (
+  10060b:	fb                   	sti    
+
+	irq_unlock(key);
+}
+  10060c:	5d                   	pop    %ebp
+  10060d:	c3                   	ret    
+
+0010060e <_IoApicRedUpdateLo>:
+ * @return N/A
+ */
+static void _IoApicRedUpdateLo(unsigned int irq,
+				uint32_t value,
+				uint32_t mask)
+{
+  10060e:	55                   	push   %ebp
+	int32_t offset = IOAPIC_REDTBL + (irq << 1); /* register offset */
+  10060f:	01 c0                	add    %eax,%eax
+{
+  100611:	89 e5                	mov    %esp,%ebp
+	int32_t offset = IOAPIC_REDTBL + (irq << 1); /* register offset */
+  100613:	83 c0 10             	add    $0x10,%eax
+{
+  100616:	56                   	push   %esi
+  100617:	53                   	push   %ebx
+	__asm__ volatile (
+  100618:	9c                   	pushf  
+  100619:	fa                   	cli    
+  10061a:	5e                   	pop    %esi
+  10061b:	0f ba e6 09          	bt     $0x9,%esi
+		(CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_IND)) = (char)offset;
+  10061f:	a2 00 00 c0 fe       	mov    %al,0xfec00000
+	value = *((volatile uint32_t *)(CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_DATA));
+  100624:	8b 1d 10 00 c0 fe    	mov    0xfec00010,%ebx
+  10062a:	73 01                	jae    10062d <_IoApicRedUpdateLo+0x1f>
+	__asm__ volatile (
+  10062c:	fb                   	sti    
+	ioApicRedSetLo(irq, (ioApicRedGetLo(irq) & ~mask) | (value & mask));
+  10062d:	31 da                	xor    %ebx,%edx
+  10062f:	21 ca                	and    %ecx,%edx
+  100631:	31 da                	xor    %ebx,%edx
+}
+  100633:	5b                   	pop    %ebx
+  100634:	5e                   	pop    %esi
+  100635:	5d                   	pop    %ebp
+	__IoApicSet(offset, lower32);
+  100636:	e9 b9 ff ff ff       	jmp    1005f4 <__IoApicSet>
+
+0010063b <_ioapic_init>:
+{
+  10063b:	55                   	push   %ebp
+  10063c:	89 e5                	mov    %esp,%ebp
+  10063e:	53                   	push   %ebx
+  10063f:	bb 11 00 00 00       	mov    $0x11,%ebx
+	__IoApicSet(offset, upper32);
+  100644:	31 d2                	xor    %edx,%edx
+  100646:	89 d8                	mov    %ebx,%eax
+  100648:	e8 a7 ff ff ff       	call   1005f4 <__IoApicSet>
+	__IoApicSet(offset, lower32);
+  10064d:	8d 43 ff             	lea    -0x1(%ebx),%eax
+  100650:	ba 00 00 01 00       	mov    $0x10000,%edx
+  100655:	83 c3 02             	add    $0x2,%ebx
+  100658:	e8 97 ff ff ff       	call   1005f4 <__IoApicSet>
+	for (ix = 0; ix < CONFIG_IOAPIC_NUM_RTES; ix++) {
+  10065d:	83 fb 41             	cmp    $0x41,%ebx
+  100660:	75 e2                	jne    100644 <_ioapic_init+0x9>
+}
+  100662:	31 c0                	xor    %eax,%eax
+  100664:	5b                   	pop    %ebx
+  100665:	5d                   	pop    %ebp
+  100666:	c3                   	ret    
+
+00100667 <_ioapic_irq_enable>:
+{
+  100667:	55                   	push   %ebp
+	_IoApicRedUpdateLo(irq, 0, IOAPIC_INT_MASK);
+  100668:	b9 00 00 01 00       	mov    $0x10000,%ecx
+{
+  10066d:	89 e5                	mov    %esp,%ebp
+	_IoApicRedUpdateLo(irq, 0, IOAPIC_INT_MASK);
+  10066f:	31 d2                	xor    %edx,%edx
+  100671:	8b 45 08             	mov    0x8(%ebp),%eax
+}
+  100674:	5d                   	pop    %ebp
+	_IoApicRedUpdateLo(irq, 0, IOAPIC_INT_MASK);
+  100675:	e9 94 ff ff ff       	jmp    10060e <_IoApicRedUpdateLo>
+
+0010067a <_ioapic_irq_set>:
+{
+  10067a:	55                   	push   %ebp
+	__IoApicSet(offset, upper32);
+  10067b:	31 d2                	xor    %edx,%edx
+{
+  10067d:	89 e5                	mov    %esp,%ebp
+  10067f:	56                   	push   %esi
+  100680:	53                   	push   %ebx
+  100681:	8b 5d 08             	mov    0x8(%ebp),%ebx
+	int32_t offset = IOAPIC_REDTBL + (irq << 1) + 1; /* register offset */
+  100684:	01 db                	add    %ebx,%ebx
+		   (vector & IOAPIC_VEC_MASK) | flags;
+  100686:	0f b6 75 0c          	movzbl 0xc(%ebp),%esi
+	int32_t offset = IOAPIC_REDTBL + (irq << 1) + 1; /* register offset */
+  10068a:	8d 43 11             	lea    0x11(%ebx),%eax
+	rteValue = IOAPIC_FIXED | IOAPIC_INT_MASK | IOAPIC_PHYSICAL |
+  10068d:	0b 75 10             	or     0x10(%ebp),%esi
+	__IoApicSet(offset, upper32);
+  100690:	e8 5f ff ff ff       	call   1005f4 <__IoApicSet>
+	rteValue = IOAPIC_FIXED | IOAPIC_INT_MASK | IOAPIC_PHYSICAL |
+  100695:	81 ce 00 00 01 00    	or     $0x10000,%esi
+	int32_t offset = IOAPIC_REDTBL + (irq << 1); /* register offset */
+  10069b:	8d 43 10             	lea    0x10(%ebx),%eax
+	__IoApicSet(offset, lower32);
+  10069e:	89 f2                	mov    %esi,%edx
+}
+  1006a0:	5b                   	pop    %ebx
+  1006a1:	5e                   	pop    %esi
+  1006a2:	5d                   	pop    %ebp
+	__IoApicSet(offset, lower32);
+  1006a3:	e9 4c ff ff ff       	jmp    1005f4 <__IoApicSet>
+
+001006a8 <strcmp>:
+ *
+ * @return negative # if <s1> < <s2>, 0 if <s1> == <s2>, else positive #
+ */
+
+int strcmp(const char *s1, const char *s2)
+{
+  1006a8:	55                   	push   %ebp
+	while ((*s1 == *s2) && (*s1 != '\0')) {
+  1006a9:	31 c9                	xor    %ecx,%ecx
+{
+  1006ab:	89 e5                	mov    %esp,%ebp
+	while ((*s1 == *s2) && (*s1 != '\0')) {
+  1006ad:	8b 45 08             	mov    0x8(%ebp),%eax
+  1006b0:	8b 55 0c             	mov    0xc(%ebp),%edx
+  1006b3:	0f be 04 08          	movsbl (%eax,%ecx,1),%eax
+  1006b7:	0f be 14 0a          	movsbl (%edx,%ecx,1),%edx
+  1006bb:	38 d0                	cmp    %dl,%al
+  1006bd:	75 08                	jne    1006c7 <strcmp+0x1f>
+  1006bf:	41                   	inc    %ecx
+  1006c0:	84 c0                	test   %al,%al
+  1006c2:	75 e9                	jne    1006ad <strcmp+0x5>
+  1006c4:	0f be d0             	movsbl %al,%edx
+		s1++;
+		s2++;
+	}
+
+	return *s1 - *s2;
+  1006c7:	29 d0                	sub    %edx,%eax
+}
+  1006c9:	5d                   	pop    %ebp
+  1006ca:	c3                   	ret    
+
+001006cb <_nop_char_out>:
+ * @param c Character to swallow
+ *
+ * @return 0
+ */
+static int _nop_char_out(int c)
+{
+  1006cb:	55                   	push   %ebp
+	ARG_UNUSED(c);
+
+	/* do nothing */
+	return 0;
+}
+  1006cc:	31 c0                	xor    %eax,%eax
+{
+  1006ce:	89 e5                	mov    %esp,%ebp
+}
+  1006d0:	5d                   	pop    %ebp
+  1006d1:	c3                   	ret    
+
+001006d2 <char_out>:
+struct out_context {
+	int count;
+};
+
+static int char_out(int c, struct out_context *ctx)
+{
+  1006d2:	55                   	push   %ebp
+  1006d3:	89 e5                	mov    %esp,%ebp
+  1006d5:	8b 45 0c             	mov    0xc(%ebp),%eax
+	ctx->count++;
+  1006d8:	ff 00                	incl   (%eax)
+	return _char_out(c);
+}
+  1006da:	5d                   	pop    %ebp
+	return _char_out(c);
+  1006db:	ff 25 88 22 10 00    	jmp    *0x102288
+
+001006e1 <_printk_dec_ulong>:
+ * @return N/A
+ */
+static void _printk_dec_ulong(out_func_t out, void *ctx,
+			      const unsigned long num, int pad_zero,
+			      int min_width)
+{
+  1006e1:	55                   	push   %ebp
+  1006e2:	89 e5                	mov    %esp,%ebp
+  1006e4:	57                   	push   %edi
+  1006e5:	56                   	push   %esi
+  1006e6:	53                   	push   %ebx
+  1006e7:	83 ec 14             	sub    $0x14,%esp
+  1006ea:	89 d6                	mov    %edx,%esi
+  1006ec:	8b 5d 0c             	mov    0xc(%ebp),%ebx
+  1006ef:	89 45 e0             	mov    %eax,-0x20(%ebp)
+  1006f2:	89 5d e8             	mov    %ebx,-0x18(%ebp)
+  1006f5:	8b 45 08             	mov    0x8(%ebp),%eax
+  1006f8:	85 db                	test   %ebx,%ebx
+  1006fa:	7f 07                	jg     100703 <_printk_dec_ulong+0x22>
+  1006fc:	c7 45 e8 01 00 00 00 	movl   $0x1,-0x18(%ebp)
+  100703:	83 f8 01             	cmp    $0x1,%eax
+  100706:	89 4d f0             	mov    %ecx,-0x10(%ebp)
+  100709:	19 db                	sbb    %ebx,%ebx
+  10070b:	c7 45 e4 0a 00 00 00 	movl   $0xa,-0x1c(%ebp)
+  100712:	83 e3 f0             	and    $0xfffffff0,%ebx
+  100715:	31 ff                	xor    %edi,%edi
+  100717:	83 c3 30             	add    $0x30,%ebx
+  10071a:	c7 45 ec ff c9 9a 3b 	movl   $0x3b9ac9ff,-0x14(%ebp)
+	if (min_width <= 0) {
+		min_width = 1;
+	}
+
+	while (pos >= 9) {
+		if (found_largest_digit || remainder > pos) {
+  100721:	8b 55 f0             	mov    -0x10(%ebp),%edx
+  100724:	39 55 ec             	cmp    %edx,-0x14(%ebp)
+  100727:	72 04                	jb     10072d <_printk_dec_ulong+0x4c>
+  100729:	85 ff                	test   %edi,%edi
+  10072b:	74 20                	je     10074d <_printk_dec_ulong+0x6c>
+			found_largest_digit = 1;
+			out((int)((remainder / (pos + 1)) + 48), ctx);
+  10072d:	8b 45 ec             	mov    -0x14(%ebp),%eax
+  100730:	31 d2                	xor    %edx,%edx
+  100732:	56                   	push   %esi
+  100733:	8d 48 01             	lea    0x1(%eax),%ecx
+  100736:	8b 45 f0             	mov    -0x10(%ebp),%eax
+  100739:	f7 f1                	div    %ecx
+  10073b:	83 c0 30             	add    $0x30,%eax
+  10073e:	50                   	push   %eax
+  10073f:	8b 45 e0             	mov    -0x20(%ebp),%eax
+  100742:	ff d0                	call   *%eax
+  100744:	59                   	pop    %ecx
+  100745:	5f                   	pop    %edi
+			found_largest_digit = 1;
+  100746:	bf 01 00 00 00       	mov    $0x1,%edi
+  10074b:	eb 13                	jmp    100760 <_printk_dec_ulong+0x7f>
+		} else if (remaining <= min_width) {
+  10074d:	8b 55 e4             	mov    -0x1c(%ebp),%edx
+  100750:	31 ff                	xor    %edi,%edi
+  100752:	39 55 e8             	cmp    %edx,-0x18(%ebp)
+  100755:	7c 09                	jl     100760 <_printk_dec_ulong+0x7f>
+			out((int)(pad_zero ? '0' : ' '), ctx);
+  100757:	8b 45 e0             	mov    -0x20(%ebp),%eax
+  10075a:	56                   	push   %esi
+  10075b:	53                   	push   %ebx
+  10075c:	ff d0                	call   *%eax
+  10075e:	58                   	pop    %eax
+  10075f:	5a                   	pop    %edx
+		}
+		remaining--;
+		remainder %= (pos + 1);
+  100760:	8b 45 ec             	mov    -0x14(%ebp),%eax
+  100763:	31 d2                	xor    %edx,%edx
+		remaining--;
+  100765:	ff 4d e4             	decl   -0x1c(%ebp)
+		remainder %= (pos + 1);
+  100768:	8d 48 01             	lea    0x1(%eax),%ecx
+  10076b:	8b 45 f0             	mov    -0x10(%ebp),%eax
+  10076e:	f7 f1                	div    %ecx
+  100770:	89 55 f0             	mov    %edx,-0x10(%ebp)
+		pos /= 10;
+  100773:	8b 45 ec             	mov    -0x14(%ebp),%eax
+  100776:	31 d2                	xor    %edx,%edx
+  100778:	b9 0a 00 00 00       	mov    $0xa,%ecx
+  10077d:	f7 f1                	div    %ecx
+  10077f:	89 45 ec             	mov    %eax,-0x14(%ebp)
+	while (pos >= 9) {
+  100782:	83 7d e4 01          	cmpl   $0x1,-0x1c(%ebp)
+  100786:	75 99                	jne    100721 <_printk_dec_ulong+0x40>
+	}
+	out((int)(remainder + 48), ctx);
+  100788:	8b 4d f0             	mov    -0x10(%ebp),%ecx
+  10078b:	89 75 0c             	mov    %esi,0xc(%ebp)
+  10078e:	83 c1 30             	add    $0x30,%ecx
+  100791:	8b 45 e0             	mov    -0x20(%ebp),%eax
+  100794:	89 4d 08             	mov    %ecx,0x8(%ebp)
+}
+  100797:	8d 65 f4             	lea    -0xc(%ebp),%esp
+  10079a:	5b                   	pop    %ebx
+  10079b:	5e                   	pop    %esi
+  10079c:	5f                   	pop    %edi
+  10079d:	5d                   	pop    %ebp
+	out((int)(remainder + 48), ctx);
+  10079e:	ff e0                	jmp    *%eax
+
+001007a0 <__printk_hook_install>:
+{
+  1007a0:	55                   	push   %ebp
+  1007a1:	89 e5                	mov    %esp,%ebp
+	_char_out = fn;
+  1007a3:	8b 45 08             	mov    0x8(%ebp),%eax
+}
+  1007a6:	5d                   	pop    %ebp
+	_char_out = fn;
+  1007a7:	a3 88 22 10 00       	mov    %eax,0x102288
+}
+  1007ac:	c3                   	ret    
+
+001007ad <_vprintk>:
+{
+  1007ad:	55                   	push   %ebp
+  1007ae:	89 e5                	mov    %esp,%ebp
+  1007b0:	57                   	push   %edi
+  1007b1:	56                   	push   %esi
+  1007b2:	53                   	push   %ebx
+  1007b3:	83 ec 1c             	sub    $0x1c,%esp
+	int might_format = 0; /* 1 if encountered a '%' */
+  1007b6:	31 db                	xor    %ebx,%ebx
+{
+  1007b8:	8b 7d 08             	mov    0x8(%ebp),%edi
+  1007bb:	8b 75 14             	mov    0x14(%ebp),%esi
+	int min_width = -1;
+  1007be:	c7 45 f0 ff ff ff ff 	movl   $0xffffffff,-0x10(%ebp)
+	int pad_zero = 0;
+  1007c5:	c7 45 ec 00 00 00 00 	movl   $0x0,-0x14(%ebp)
+	while (*fmt) {
+  1007cc:	8b 45 10             	mov    0x10(%ebp),%eax
+  1007cf:	0f be 00             	movsbl (%eax),%eax
+  1007d2:	84 c0                	test   %al,%al
+  1007d4:	0f 84 2b 02 00 00    	je     100a05 <_vprintk+0x258>
+		if (!might_format) {
+  1007da:	85 db                	test   %ebx,%ebx
+  1007dc:	75 15                	jne    1007f3 <_vprintk+0x46>
+			if (*fmt != '%') {
+  1007de:	3c 25                	cmp    $0x25,%al
+  1007e0:	0f 84 ff 01 00 00    	je     1009e5 <_vprintk+0x238>
+				out((int)*fmt, ctx);
+  1007e6:	ff 75 0c             	pushl  0xc(%ebp)
+  1007e9:	50                   	push   %eax
+  1007ea:	ff d7                	call   *%edi
+  1007ec:	59                   	pop    %ecx
+  1007ed:	58                   	pop    %eax
+  1007ee:	e9 0a 02 00 00       	jmp    1009fd <_vprintk+0x250>
+			switch (*fmt) {
+  1007f3:	3c 68                	cmp    $0x68,%al
+  1007f5:	0f 84 02 02 00 00    	je     1009fd <_vprintk+0x250>
+  1007fb:	7f 3a                	jg     100837 <_vprintk+0x8a>
+  1007fd:	3c 39                	cmp    $0x39,%al
+  1007ff:	7f 19                	jg     10081a <_vprintk+0x6d>
+  100801:	3c 31                	cmp    $0x31,%al
+  100803:	0f 8d 89 00 00 00    	jge    100892 <_vprintk+0xe5>
+  100809:	3c 25                	cmp    $0x25,%al
+  10080b:	0f 84 b2 01 00 00    	je     1009c3 <_vprintk+0x216>
+  100811:	3c 30                	cmp    $0x30,%al
+  100813:	74 6b                	je     100880 <_vprintk+0xd3>
+  100815:	e9 b0 01 00 00       	jmp    1009ca <_vprintk+0x21d>
+  10081a:	3c 63                	cmp    $0x63,%al
+  10081c:	0f 84 92 01 00 00    	je     1009b4 <_vprintk+0x207>
+  100822:	3c 64                	cmp    $0x64,%al
+  100824:	0f 84 83 00 00 00    	je     1008ad <_vprintk+0x100>
+  10082a:	3c 58                	cmp    $0x58,%al
+  10082c:	0f 85 98 01 00 00    	jne    1009ca <_vprintk+0x21d>
+  100832:	e9 c4 00 00 00       	jmp    1008fb <_vprintk+0x14e>
+  100837:	3c 73                	cmp    $0x73,%al
+  100839:	0f 84 5a 01 00 00    	je     100999 <_vprintk+0x1ec>
+  10083f:	7f 1a                	jg     10085b <_vprintk+0xae>
+  100841:	3c 6c                	cmp    $0x6c,%al
+  100843:	0f 84 b4 01 00 00    	je     1009fd <_vprintk+0x250>
+  100849:	3c 70                	cmp    $0x70,%al
+  10084b:	0f 84 8e 00 00 00    	je     1008df <_vprintk+0x132>
+  100851:	3c 69                	cmp    $0x69,%al
+  100853:	0f 85 71 01 00 00    	jne    1009ca <_vprintk+0x21d>
+  100859:	eb 52                	jmp    1008ad <_vprintk+0x100>
+  10085b:	3c 78                	cmp    $0x78,%al
+  10085d:	0f 84 98 00 00 00    	je     1008fb <_vprintk+0x14e>
+  100863:	3c 7a                	cmp    $0x7a,%al
+  100865:	0f 84 92 01 00 00    	je     1009fd <_vprintk+0x250>
+  10086b:	3c 75                	cmp    $0x75,%al
+  10086d:	0f 85 57 01 00 00    	jne    1009ca <_vprintk+0x21d>
+				_printk_dec_ulong(out, ctx, u, pad_zero,
+  100873:	ff 75 f0             	pushl  -0x10(%ebp)
+				unsigned long u = va_arg(
+  100876:	8d 5e 04             	lea    0x4(%esi),%ebx
+				_printk_dec_ulong(out, ctx, u, pad_zero,
+  100879:	8b 0e                	mov    (%esi),%ecx
+  10087b:	ff 75 ec             	pushl  -0x14(%ebp)
+  10087e:	eb 4c                	jmp    1008cc <_vprintk+0x11f>
+				if (min_width < 0 && pad_zero == 0) {
+  100880:	8b 55 f0             	mov    -0x10(%ebp),%edx
+  100883:	c1 ea 1f             	shr    $0x1f,%edx
+  100886:	74 0a                	je     100892 <_vprintk+0xe5>
+  100888:	83 7d ec 00          	cmpl   $0x0,-0x14(%ebp)
+  10088c:	0f 84 68 01 00 00    	je     1009fa <_vprintk+0x24d>
+				if (min_width < 0) {
+  100892:	83 7d f0 00          	cmpl   $0x0,-0x10(%ebp)
+  100896:	79 05                	jns    10089d <_vprintk+0xf0>
+					min_width = *fmt - '0';
+  100898:	83 e8 30             	sub    $0x30,%eax
+  10089b:	eb 08                	jmp    1008a5 <_vprintk+0xf8>
+					min_width = 10 * min_width + *fmt - '0';
+  10089d:	6b 55 f0 0a          	imul   $0xa,-0x10(%ebp),%edx
+  1008a1:	8d 44 10 d0          	lea    -0x30(%eax,%edx,1),%eax
+  1008a5:	89 45 f0             	mov    %eax,-0x10(%ebp)
+  1008a8:	e9 50 01 00 00       	jmp    1009fd <_vprintk+0x250>
+				long d = va_arg(ap, long);
+  1008ad:	8d 5e 04             	lea    0x4(%esi),%ebx
+  1008b0:	8b 36                	mov    (%esi),%esi
+				if (d < 0) {
+  1008b2:	85 f6                	test   %esi,%esi
+  1008b4:	79 0e                	jns    1008c4 <_vprintk+0x117>
+					out((int)'-', ctx);
+  1008b6:	ff 75 0c             	pushl  0xc(%ebp)
+  1008b9:	6a 2d                	push   $0x2d
+  1008bb:	ff d7                	call   *%edi
+					min_width--;
+  1008bd:	ff 4d f0             	decl   -0x10(%ebp)
+					out((int)'-', ctx);
+  1008c0:	58                   	pop    %eax
+					d = -d;
+  1008c1:	f7 de                	neg    %esi
+					out((int)'-', ctx);
+  1008c3:	5a                   	pop    %edx
+				_printk_dec_ulong(out, ctx, d, pad_zero,
+  1008c4:	ff 75 f0             	pushl  -0x10(%ebp)
+  1008c7:	ff 75 ec             	pushl  -0x14(%ebp)
+  1008ca:	89 f1                	mov    %esi,%ecx
+				_printk_dec_ulong(out, ctx, u, pad_zero,
+  1008cc:	8b 55 0c             	mov    0xc(%ebp),%edx
+  1008cf:	89 f8                	mov    %edi,%eax
+  1008d1:	e8 0b fe ff ff       	call   1006e1 <_printk_dec_ulong>
+  1008d6:	59                   	pop    %ecx
+  1008d7:	5e                   	pop    %esi
+				unsigned long u = va_arg(
+  1008d8:	89 de                	mov    %ebx,%esi
+  1008da:	e9 02 01 00 00       	jmp    1009e1 <_vprintk+0x234>
+				  out('0', ctx);
+  1008df:	ff 75 0c             	pushl  0xc(%ebp)
+  1008e2:	6a 30                	push   $0x30
+  1008e4:	ff d7                	call   *%edi
+  1008e6:	59                   	pop    %ecx
+  1008e7:	58                   	pop    %eax
+				  out('x', ctx);
+  1008e8:	ff 75 0c             	pushl  0xc(%ebp)
+  1008eb:	6a 78                	push   $0x78
+  1008ed:	ff d7                	call   *%edi
+  1008ef:	58                   	pop    %eax
+				  pad_zero = 1;
+  1008f0:	89 5d ec             	mov    %ebx,-0x14(%ebp)
+				  out('x', ctx);
+  1008f3:	5a                   	pop    %edx
+				  min_width = 8;
+  1008f4:	c7 45 f0 08 00 00 00 	movl   $0x8,-0x10(%ebp)
+				unsigned long x = va_arg(
+  1008fb:	8d 46 04             	lea    0x4(%esi),%eax
+	int remaining = 8; /* 8 digits max */
+  1008fe:	ba 08 00 00 00       	mov    $0x8,%edx
+  100903:	83 7d ec 01          	cmpl   $0x1,-0x14(%ebp)
+				unsigned long x = va_arg(
+  100907:	89 45 dc             	mov    %eax,-0x24(%ebp)
+  10090a:	8b 06                	mov    (%esi),%eax
+  10090c:	89 45 e0             	mov    %eax,-0x20(%ebp)
+	int found_largest_digit = 0;
+  10090f:	c7 45 e8 00 00 00 00 	movl   $0x0,-0x18(%ebp)
+  100916:	19 c0                	sbb    %eax,%eax
+	int size = sizeof(num) * 2;
+  100918:	be 08 00 00 00       	mov    $0x8,%esi
+  10091d:	89 45 e4             	mov    %eax,-0x1c(%ebp)
+  100920:	83 65 e4 f0          	andl   $0xfffffff0,-0x1c(%ebp)
+  100924:	83 45 e4 30          	addl   $0x30,-0x1c(%ebp)
+		char nibble = (num >> ((size - 1) << 2) & 0xf);
+  100928:	4e                   	dec    %esi
+  100929:	8b 45 e0             	mov    -0x20(%ebp),%eax
+  10092c:	8d 0c b5 00 00 00 00 	lea    0x0(,%esi,4),%ecx
+  100933:	d3 e8                	shr    %cl,%eax
+  100935:	89 c1                	mov    %eax,%ecx
+		if (nibble || found_largest_digit || size == 1) {
+  100937:	80 e1 0f             	and    $0xf,%cl
+  10093a:	75 0e                	jne    10094a <_vprintk+0x19d>
+  10093c:	83 7d e8 00          	cmpl   $0x0,-0x18(%ebp)
+  100940:	75 08                	jne    10094a <_vprintk+0x19d>
+  100942:	85 f6                	test   %esi,%esi
+  100944:	75 29                	jne    10096f <_vprintk+0x1c2>
+			nibble += nibble > 9 ? 87 : 48;
+  100946:	b0 30                	mov    $0x30,%al
+  100948:	eb 0d                	jmp    100957 <_vprintk+0x1aa>
+  10094a:	80 f9 09             	cmp    $0x9,%cl
+  10094d:	0f 9f c0             	setg   %al
+  100950:	48                   	dec    %eax
+  100951:	83 e0 d9             	and    $0xffffffd9,%eax
+  100954:	83 c0 57             	add    $0x57,%eax
+			out((int)nibble, ctx);
+  100957:	ff 75 0c             	pushl  0xc(%ebp)
+			nibble += nibble > 9 ? 87 : 48;
+  10095a:	01 c8                	add    %ecx,%eax
+  10095c:	89 55 d8             	mov    %edx,-0x28(%ebp)
+			out((int)nibble, ctx);
+  10095f:	0f b6 c0             	movzbl %al,%eax
+  100962:	50                   	push   %eax
+  100963:	ff d7                	call   *%edi
+  100965:	58                   	pop    %eax
+			found_largest_digit = 1;
+  100966:	89 5d e8             	mov    %ebx,-0x18(%ebp)
+			out((int)nibble, ctx);
+  100969:	5a                   	pop    %edx
+  10096a:	8b 55 d8             	mov    -0x28(%ebp),%edx
+  10096d:	eb 21                	jmp    100990 <_vprintk+0x1e3>
+		if (remaining-- <= min_width) {
+  10096f:	8d 4a ff             	lea    -0x1(%edx),%ecx
+  100972:	39 55 f0             	cmp    %edx,-0x10(%ebp)
+  100975:	7c 10                	jl     100987 <_vprintk+0x1da>
+			out((int)(pad_zero ? '0' : ' '), ctx);
+  100977:	ff 75 0c             	pushl  0xc(%ebp)
+  10097a:	ff 75 e4             	pushl  -0x1c(%ebp)
+  10097d:	89 4d e8             	mov    %ecx,-0x18(%ebp)
+  100980:	ff d7                	call   *%edi
+  100982:	59                   	pop    %ecx
+		if (remaining-- <= min_width) {
+  100983:	8b 4d e8             	mov    -0x18(%ebp),%ecx
+			out((int)(pad_zero ? '0' : ' '), ctx);
+  100986:	58                   	pop    %eax
+		if (remaining-- <= min_width) {
+  100987:	89 ca                	mov    %ecx,%edx
+  100989:	c7 45 e8 00 00 00 00 	movl   $0x0,-0x18(%ebp)
+	for (; size; size--) {
+  100990:	85 f6                	test   %esi,%esi
+  100992:	75 94                	jne    100928 <_vprintk+0x17b>
+				unsigned long x = va_arg(
+  100994:	8b 75 dc             	mov    -0x24(%ebp),%esi
+  100997:	eb 48                	jmp    1009e1 <_vprintk+0x234>
+				char *s = va_arg(ap, char *);
+  100999:	8d 5e 04             	lea    0x4(%esi),%ebx
+  10099c:	8b 36                	mov    (%esi),%esi
+				while (*s)
+  10099e:	0f be 06             	movsbl (%esi),%eax
+  1009a1:	84 c0                	test   %al,%al
+  1009a3:	0f 84 2f ff ff ff    	je     1008d8 <_vprintk+0x12b>
+					out((int)(*s++), ctx);
+  1009a9:	ff 75 0c             	pushl  0xc(%ebp)
+  1009ac:	46                   	inc    %esi
+  1009ad:	50                   	push   %eax
+  1009ae:	ff d7                	call   *%edi
+  1009b0:	58                   	pop    %eax
+  1009b1:	5a                   	pop    %edx
+  1009b2:	eb ea                	jmp    10099e <_vprintk+0x1f1>
+				out(c, ctx);
+  1009b4:	ff 75 0c             	pushl  0xc(%ebp)
+  1009b7:	ff 36                	pushl  (%esi)
+				int c = va_arg(ap, int);
+  1009b9:	8d 5e 04             	lea    0x4(%esi),%ebx
+				out(c, ctx);
+  1009bc:	ff d7                	call   *%edi
+  1009be:	e9 13 ff ff ff       	jmp    1008d6 <_vprintk+0x129>
+				out((int)'%', ctx);
+  1009c3:	ff 75 0c             	pushl  0xc(%ebp)
+  1009c6:	6a 25                	push   $0x25
+  1009c8:	eb 13                	jmp    1009dd <_vprintk+0x230>
+				out((int)'%', ctx);
+  1009ca:	ff 75 0c             	pushl  0xc(%ebp)
+  1009cd:	6a 25                	push   $0x25
+  1009cf:	ff d7                	call   *%edi
+  1009d1:	59                   	pop    %ecx
+  1009d2:	5b                   	pop    %ebx
+				out((int)*fmt, ctx);
+  1009d3:	ff 75 0c             	pushl  0xc(%ebp)
+  1009d6:	8b 45 10             	mov    0x10(%ebp),%eax
+  1009d9:	0f be 00             	movsbl (%eax),%eax
+  1009dc:	50                   	push   %eax
+  1009dd:	ff d7                	call   *%edi
+  1009df:	58                   	pop    %eax
+  1009e0:	5a                   	pop    %edx
+			might_format = 0;
+  1009e1:	31 db                	xor    %ebx,%ebx
+				break;
+  1009e3:	eb 18                	jmp    1009fd <_vprintk+0x250>
+				pad_zero = 0;
+  1009e5:	c7 45 ec 00 00 00 00 	movl   $0x0,-0x14(%ebp)
+				min_width = -1;
+  1009ec:	c7 45 f0 ff ff ff ff 	movl   $0xffffffff,-0x10(%ebp)
+				might_format = 1;
+  1009f3:	bb 01 00 00 00       	mov    $0x1,%ebx
+  1009f8:	eb 03                	jmp    1009fd <_vprintk+0x250>
+					pad_zero = 1;
+  1009fa:	89 5d ec             	mov    %ebx,-0x14(%ebp)
+		++fmt;
+  1009fd:	ff 45 10             	incl   0x10(%ebp)
+  100a00:	e9 c7 fd ff ff       	jmp    1007cc <_vprintk+0x1f>
+}
+  100a05:	8d 65 f4             	lea    -0xc(%ebp),%esp
+  100a08:	5b                   	pop    %ebx
+  100a09:	5e                   	pop    %esi
+  100a0a:	5f                   	pop    %edi
+  100a0b:	5d                   	pop    %ebp
+  100a0c:	c3                   	ret    
+
+00100a0d <printk>:
+{
+  100a0d:	55                   	push   %ebp
+  100a0e:	89 e5                	mov    %esp,%ebp
+  100a10:	50                   	push   %eax
+	va_start(ap, fmt);
+  100a11:	8d 45 0c             	lea    0xc(%ebp),%eax
+	struct out_context ctx = { 0 };
+  100a14:	c7 45 fc 00 00 00 00 	movl   $0x0,-0x4(%ebp)
+	_vprintk((out_func_t)char_out, &ctx, fmt, ap);
+  100a1b:	50                   	push   %eax
+  100a1c:	8d 45 fc             	lea    -0x4(%ebp),%eax
+  100a1f:	ff 75 08             	pushl  0x8(%ebp)
+  100a22:	50                   	push   %eax
+  100a23:	68 d2 06 10 00       	push   $0x1006d2
+  100a28:	e8 80 fd ff ff       	call   1007ad <_vprintk>
+}
+  100a2d:	8b 45 fc             	mov    -0x4(%ebp),%eax
+	_vprintk((out_func_t)char_out, &ctx, fmt, ap);
+  100a30:	83 c4 10             	add    $0x10,%esp
+}
+  100a33:	c9                   	leave  
+  100a34:	c3                   	ret    
+
+00100a35 <_ConfigAbsSyms>:
+/* file is auto-generated, do not modify ! */
+
+#include <toolchain.h>
+
+GEN_ABS_SYM_BEGIN (_ConfigAbsSyms)
+  100a35:	55                   	push   %ebp
+  100a36:	89 e5                	mov    %esp,%ebp
+GEN_ABSOLUTE_SYM(CONFIG_HPET_TIMER_LEGACY_EMULATION, 1);
+GEN_ABSOLUTE_SYM(CONFIG_SYS_LOG_IEEE802154_DRIVER_LEVEL, 0);
+GEN_ABSOLUTE_SYM(CONFIG_MEM_POOL_SPLIT_BEFORE_DEFRAG, 1);
+GEN_ABSOLUTE_SYM(CONFIG_ISA_IA32, 1);
+
+GEN_ABS_SYM_END
+  100a38:	5d                   	pop    %ebp
+  100a39:	c3                   	ret    
+
+00100a3a <k_cpu_idle>:
+ * will be issued causing a low-power consumption sleep mode.
+ *
+ * @return N/A
+ */
+void k_cpu_idle(void)
+{
+  100a3a:	55                   	push   %ebp
+  100a3b:	89 e5                	mov    %esp,%ebp
+	_sys_k_event_logger_enter_sleep();
+#if defined(CONFIG_BOOT_TIME_MEASUREMENT)
+	__idle_tsc = _tsc_read();
+#endif
+
+	__asm__ volatile (
+  100a3d:	fb                   	sti    
+  100a3e:	f4                   	hlt    
+	    "sti\n\t"
+	    "hlt\n\t");
+}
+  100a3f:	5d                   	pop    %ebp
+  100a40:	c3                   	ret    
+
+00100a41 <_SysFatalErrorHandler>:
+ *
+ * @return This function does not return.
+ */
+FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
+					 const NANO_ESF *pEsf)
+{
+  100a41:	55                   	push   %ebp
+  100a42:	89 e5                	mov    %esp,%ebp
+	ARG_UNUSED(reason);
+	ARG_UNUSED(pEsf);
+
+#if !defined(CONFIG_SIMPLE_FATAL_ERROR_HANDLER)
+	if (k_is_in_isr() || _is_thread_essential()) {
+  100a44:	e8 26 0a 00 00       	call   10146f <k_is_in_isr>
+  100a49:	85 c0                	test   %eax,%eax
+  100a4b:	74 15                	je     100a62 <_SysFatalErrorHandler+0x21>
+		printk("Fatal fault in %s! Spinning...\n",
+		       k_is_in_isr() ? "ISR" : "essential thread");
+  100a4d:	e8 1d 0a 00 00       	call   10146f <k_is_in_isr>
+		printk("Fatal fault in %s! Spinning...\n",
+  100a52:	ba 64 17 10 00       	mov    $0x101764,%edx
+  100a57:	85 c0                	test   %eax,%eax
+  100a59:	75 2e                	jne    100a89 <_SysFatalErrorHandler+0x48>
+  100a5b:	ba 68 17 10 00       	mov    $0x101768,%edx
+  100a60:	eb 27                	jmp    100a89 <_SysFatalErrorHandler+0x48>
+	if (k_is_in_isr() || _is_thread_essential()) {
+  100a62:	e8 19 0a 00 00       	call   101480 <_is_thread_essential>
+  100a67:	85 c0                	test   %eax,%eax
+  100a69:	75 e2                	jne    100a4d <_SysFatalErrorHandler+0xc>
+		for (;;)
+			; /* spin forever */
+	}
+	printk("Fatal fault in thread %p! Aborting.\n", _current);
+  100a6b:	ff 35 28 23 10 00    	pushl  0x102328
+  100a71:	68 99 17 10 00       	push   $0x101799
+  100a76:	e8 92 ff ff ff       	call   100a0d <printk>
+  100a7b:	58                   	pop    %eax
+  100a7c:	5a                   	pop    %edx
+	k_thread_abort(_current);
+  100a7d:	ff 35 28 23 10 00    	pushl  0x102328
+  100a83:	e8 3f 0b 00 00       	call   1015c7 <k_thread_abort>
+  100a88:	59                   	pop    %ecx
+		printk("Fatal fault in %s! Spinning...\n",
+  100a89:	52                   	push   %edx
+  100a8a:	68 79 17 10 00       	push   $0x101779
+  100a8f:	e8 79 ff ff ff       	call   100a0d <printk>
+  100a94:	58                   	pop    %eax
+  100a95:	5a                   	pop    %edx
+  100a96:	eb fe                	jmp    100a96 <_SysFatalErrorHandler+0x55>
+
+00100a98 <_cache_line_size_get>:
+	#define CPUID_CACHE_LINE_MASK (0xff << 8)
+
+	GTEXT(_cache_line_size_get)
+
+SECTION_FUNC(TEXT, _cache_line_size_get)
+	pushl %ebx
+  100a98:	53                   	push   %ebx
+	movl $1, %eax
+  100a99:	b8 01 00 00 00       	mov    $0x1,%eax
+	cpuid
+  100a9e:	0f a2                	cpuid  
+	movl %ebx, %eax
+  100aa0:	89 d8                	mov    %ebx,%eax
+	andl $CPUID_CACHE_LINE_MASK, %eax
+  100aa2:	25 00 ff 00 00       	and    $0xff00,%eax
+	shrl $5,%eax	/* shift right 8 to get value, then multiple by 8
+  100aa7:	c1 e8 05             	shr    $0x5,%eax
+					 * to get cache line size */
+	popl %ebx
+  100aaa:	5b                   	pop    %ebx
+	ret
+  100aab:	c3                   	ret    
+
+00100aac <init_cache>:
+#else
+#define init_cache_line_size() do { } while ((0))
+#endif
+
+static int init_cache(struct device *unused)
+{
+  100aac:	55                   	push   %ebp
+  100aad:	89 e5                	mov    %esp,%ebp
+	sys_cache_line_size = _cache_line_size_get();
+  100aaf:	e8 e4 ff ff ff       	call   100a98 <_cache_line_size_get>
+
+	init_cache_flush();
+	init_cache_line_size();
+
+	return 0;
+}
+  100ab4:	5d                   	pop    %ebp
+	sys_cache_line_size = _cache_line_size_get();
+  100ab5:	a3 48 24 10 00       	mov    %eax,0x102448
+}
+  100aba:	31 c0                	xor    %eax,%eax
+  100abc:	c3                   	ret    
+
+00100abd <_exception_enter>:
+	 *
+	 * Clear the direction flag.  It is automatically restored when the
+	 * exception exits.
+	 */
+
+	cld
+  100abd:	fc                   	cld    
+
+
+	/*
+	 * Swap ecx and handler function on the current stack;
+	 */
+	xchgl	%ecx, (%esp)
+  100abe:	87 0c 24             	xchg   %ecx,(%esp)
+
+	/*
+	 * Push the remaining volatile registers on the existing stack.
+	 */
+
+	pushl	%eax
+  100ac1:	50                   	push   %eax
+	pushl	%edx
+  100ac2:	52                   	push   %edx
+	/*
+	 * Push the cooperative registers on the existing stack as they are
+	 * required by debug tools.
+	 */
+
+	pushl	%edi
+  100ac3:	57                   	push   %edi
+	pushl	%esi
+  100ac4:	56                   	push   %esi
+	pushl	%ebx
+  100ac5:	53                   	push   %ebx
+	pushl	%ebp
+  100ac6:	55                   	push   %ebp
+
+	leal	44(%esp), %eax   /* Calculate ESP before interrupt occurred */
+  100ac7:	8d 44 24 2c          	lea    0x2c(%esp),%eax
+	pushl	%eax             /* Save calculated ESP */
+  100acb:	50                   	push   %eax
+	 * Test IF bit of saved EFLAGS and re-enable interrupts if IF=1.
+	 */
+
+	/* ESP is still pointing to the ESF at this point */
+
+	testl	$0x200, __NANO_ESF_eflags_OFFSET(%esp)
+  100acc:	f7 44 24 2c 00 02 00 	testl  $0x200,0x2c(%esp)
+  100ad3:	00 
+	je	allDone
+  100ad4:	74 01                	je     100ad7 <allDone>
+	sti
+  100ad6:	fb                   	sti    
+
+00100ad7 <allDone>:
+
+allDone:
+#if CONFIG_X86_IAMCU
+	movl	%esp, %eax		/* NANO_ESF * parameter */
+#else
+	pushl	%esp			/* push NANO_ESF * parameter */
+  100ad7:	54                   	push   %esp
+#endif
+	call	*%ecx			/* call exception handler */
+  100ad8:	ff d1                	call   *%ecx
+
+#ifndef CONFIG_X86_IAMCU
+	addl	$0x4, %esp
+  100ada:	83 c4 04             	add    $0x4,%esp
+	 * Pop the non-volatile registers from the stack.
+	 * Note that debug tools may have altered the saved register values while
+	 * the task was stopped, and we want to pick up the altered values.
+	 */
+
+	popl	%ebp		/* Discard saved ESP */
+  100add:	5d                   	pop    %ebp
+	popl	%ebp
+  100ade:	5d                   	pop    %ebp
+	popl	%ebx
+  100adf:	5b                   	pop    %ebx
+	popl	%esi
+  100ae0:	5e                   	pop    %esi
+	popl	%edi
+  100ae1:	5f                   	pop    %edi
+
+	/* restore edx and ecx which are always saved on the stack */
+
+	popl	%edx
+  100ae2:	5a                   	pop    %edx
+	popl	%eax
+  100ae3:	58                   	pop    %eax
+	popl	%ecx
+  100ae4:	59                   	pop    %ecx
+
+	addl	$4, %esp	/* "pop" error code */
+  100ae5:	83 c4 04             	add    $0x4,%esp
+
+	/* Pop of EFLAGS will re-enable interrupts and restore direction flag */
+	iret
+  100ae8:	cf                   	iret   
+
+00100ae9 <_interrupt_enter>:
+	 *
+	 * Clear the direction flag.  It is automatically restored when the
+	 * interrupt exits via the IRET instruction.
+	 */
+
+	cld
+  100ae9:	fc                   	cld    
+
+	/*
+	 * Swap EAX with isr_param and EDX with isr.
+	 * Push ECX onto the stack
+	 */
+	xchgl	%eax, 4(%esp)
+  100aea:	87 44 24 04          	xchg   %eax,0x4(%esp)
+	xchgl	%edx, (%esp)
+  100aee:	87 14 24             	xchg   %edx,(%esp)
+	pushl	%ecx
+  100af1:	51                   	push   %ecx
+
+	/* Push EDI as we will use it for scratch space.
+	 * Rest of the callee-saved regs get saved by invocation of C
+	 * functions (isr handler, _Swap(), etc)
+	 */
+	pushl	%edi
+  100af2:	57                   	push   %edi
+	popl	%eax
+#endif
+
+	/* load %ecx with &_kernel */
+
+	movl	$_kernel, %ecx
+  100af3:	b9 20 23 10 00       	mov    $0x102320,%ecx
+
+	/* switch to the interrupt stack for the non-nested case */
+
+	incl	_kernel_offset_to_nested(%ecx)
+  100af8:	ff 01                	incl   (%ecx)
+
+	/* use interrupt stack if not nested */
+	cmpl	$1, _kernel_offset_to_nested(%ecx)
+  100afa:	83 39 01             	cmpl   $0x1,(%ecx)
+#ifdef CONFIG_DEBUG_INFO
+	jne	nested_save_isf
+#else
+	jne	alreadyOnIntStack
+  100afd:	75 06                	jne    100b05 <alreadyOnIntStack>
+	/*
+	 * switch to base of the interrupt stack: save esp in edi, then load
+	 * irq_stack pointer
+	 */
+
+	movl	%esp, %edi
+  100aff:	89 e7                	mov    %esp,%edi
+	movl	_kernel_offset_to_irq_stack(%ecx), %esp
+  100b01:	8b 61 04             	mov    0x4(%ecx),%esp
+
+
+	/* save thread's stack pointer onto base of interrupt stack */
+
+	pushl	%edi			/* Save stack pointer */
+  100b04:	57                   	push   %edi
+
+00100b05 <alreadyOnIntStack>:
+
+#ifndef CONFIG_X86_IAMCU
+	/* EAX has the interrupt handler argument, needs to go on
+	 * stack for sys V calling convention
+	 */
+	push	%eax
+  100b05:	50                   	push   %eax
+#endif
+#ifdef CONFIG_NESTED_INTERRUPTS
+	sti			/* re-enable interrupts */
+  100b06:	fb                   	sti    
+#endif
+	/* Now call the interrupt handler */
+	call	*%edx
+  100b07:	ff d2                	call   *%edx
+#ifndef CONFIG_X86_IAMCU
+	/* Discard ISR argument */
+	addl	$0x4, %esp
+  100b09:	83 c4 04             	add    $0x4,%esp
+#endif
+#ifdef CONFIG_NESTED_INTERRUPTS
+	cli			/* disable interrupts again */
+  100b0c:	fa                   	cli    
+#endif
+
+	/* irq_controller.h interface */
+	_irq_controller_eoi_macro
+  100b0d:	31 c0                	xor    %eax,%eax
+  100b0f:	a3 b0 00 e0 fe       	mov    %eax,0xfee000b0
+#ifdef CONFIG_INT_LATENCY_BENCHMARK
+	call	_int_latency_start
+#endif
+
+	/* determine whether exiting from a nested interrupt */
+	movl	$_kernel, %ecx
+  100b14:	b9 20 23 10 00       	mov    $0x102320,%ecx
+#ifdef CONFIG_DEBUG_INFO
+	popl	_kernel_offset_to_isf(%ecx)    /* Restore old ISF */
+#endif
+	decl	_kernel_offset_to_nested(%ecx)	/* dec interrupt nest count */
+  100b19:	ff 09                	decl   (%ecx)
+	jne	nestedInterrupt                 /* 'iret' if nested case */
+  100b1b:	75 20                	jne    100b3d <nestedInterrupt>
+
+
+#ifdef CONFIG_PREEMPT_ENABLED
+	movl	_kernel_offset_to_current(%ecx), %edx
+  100b1d:	8b 51 08             	mov    0x8(%ecx),%edx
+
+	/*
+	 * Non-preemptible thread ? Do not schedule (see explanation of
+	 * preempt field in kernel_struct.h).
+	 */
+	cmpw	$_NON_PREEMPT_THRESHOLD, _thread_offset_to_preempt(%edx)
+  100b20:	66 81 7a 0a 80 00    	cmpw   $0x80,0xa(%edx)
+	jae	noReschedule
+  100b26:	73 14                	jae    100b3c <noReschedule>
+
+
+	/* reschedule only if the scheduler says that we must do so */
+	cmpl	%edx, _kernel_offset_to_ready_q_cache(%ecx)
+  100b28:	39 51 14             	cmp    %edx,0x14(%ecx)
+	je	noReschedule
+  100b2b:	74 0f                	je     100b3c <noReschedule>
+	 * the existing _Swap() primitive to save the remaining
+	 * thread's registers (including floating point) and perform
+	 * a switch to the new thread.
+	 */
+
+	popl	%esp	/* switch back to outgoing thread's stack */
+  100b2d:	5c                   	pop    %esp
+	popl	%ebp
+	popl	%ebx
+	popl	%esi
+#endif
+
+	pushfl			/* push KERNEL_LOCK_KEY argument */
+  100b2e:	9c                   	pushf  
+#ifdef CONFIG_X86_IAMCU
+	/* IAMCU first argument goes into a register, not the stack.
+	 */
+	popl	%eax
+#endif
+	call	_Swap
+  100b2f:	e8 26 00 00 00       	call   100b5a <_Swap>
+
+#ifndef CONFIG_X86_IAMCU
+	addl 	$4, %esp	/* pop KERNEL_LOCK_KEY argument */
+  100b34:	83 c4 04             	add    $0x4,%esp
+
+	/* Restore volatile registers and return to the interrupted thread */
+#ifdef CONFIG_INT_LATENCY_BENCHMARK
+	call	_int_latency_stop
+#endif
+	popl	%edi
+  100b37:	5f                   	pop    %edi
+	popl	%ecx
+  100b38:	59                   	pop    %ecx
+	popl	%edx
+  100b39:	5a                   	pop    %edx
+	popl	%eax
+  100b3a:	58                   	pop    %eax
+
+	/* Pop of EFLAGS will re-enable interrupts and restore direction flag */
+	iret
+  100b3b:	cf                   	iret   
+
+00100b3c <noReschedule>:
+	/*
+	 * A thread reschedule is not required; switch back to the
+	 * interrupted thread's stack and restore volatile registers
+	 */
+
+	popl	%esp		/* pop thread stack pointer */
+  100b3c:	5c                   	pop    %esp
+
+00100b3d <nestedInterrupt>:
+	popl	%ebp        /* Discard saved ESP */
+	popl	%ebp
+	popl	%ebx
+	popl	%esi
+#endif
+	popl	%edi
+  100b3d:	5f                   	pop    %edi
+	popl	%ecx		/* pop volatile registers in reverse order */
+  100b3e:	59                   	pop    %ecx
+	popl	%edx
+  100b3f:	5a                   	pop    %edx
+	popl	%eax
+  100b40:	58                   	pop    %eax
+	/* Pop of EFLAGS will re-enable interrupts and restore direction flag */
+	iret
+  100b41:	cf                   	iret   
+
+00100b42 <_SpuriousIntNoErrCodeHandler>:
+ * thus _SpuriousIntNoErrCodeHandler()/_SpuriousIntHandler() shall be
+ * invoked with interrupts disabled.
+ */
+SECTION_FUNC(TEXT, _SpuriousIntNoErrCodeHandler)
+
+	pushl	$0			/* push dummy err code onto stk */
+  100b42:	6a 00                	push   $0x0
+
+00100b44 <_SpuriousIntHandler>:
+	/* fall through to _SpuriousIntHandler */
+
+
+SECTION_FUNC(TEXT, _SpuriousIntHandler)
+
+	cld				/* Clear direction flag */
+  100b44:	fc                   	cld    
+
+	/* Create the ESF */
+
+	pushl %eax
+  100b45:	50                   	push   %eax
+	pushl %ecx
+  100b46:	51                   	push   %ecx
+	pushl %edx
+  100b47:	52                   	push   %edx
+	pushl %edi
+  100b48:	57                   	push   %edi
+	pushl %esi
+  100b49:	56                   	push   %esi
+	pushl %ebx
+  100b4a:	53                   	push   %ebx
+	pushl %ebp
+  100b4b:	55                   	push   %ebp
+
+	leal	44(%esp), %ecx   /* Calculate ESP before exception occurred */
+  100b4c:	8d 4c 24 2c          	lea    0x2c(%esp),%ecx
+	pushl	%ecx             /* Save calculated ESP */
+  100b50:	51                   	push   %ecx
+
+#ifndef CONFIG_X86_IAMCU
+	pushl	%esp			/* push cur stack pointer: pEsf arg */
+  100b51:	54                   	push   %esp
+#else
+	mov	%esp, %edx
+#endif
+
+	/* re-enable interrupts */
+	sti
+  100b52:	fb                   	sti    
+
+	/* push the 'unsigned int reason' parameter */
+#ifndef CONFIG_X86_IAMCU
+	pushl	$_NANO_ERR_SPURIOUS_INT
+  100b53:	6a 00                	push   $0x0
+#else
+	movl	$_NANO_ERR_SPURIOUS_INT, %eax
+#endif
+	/* call the fatal error handler */
+	call	_NanoFatalErrorHandler
+  100b55:	e8 94 00 00 00       	call   100bee <_NanoFatalErrorHandler>
+
+00100b5a <_Swap>:
+	 * any of these registers into the k_thread.  Only the 'esp' register
+	 * after all the pushes have been performed) will be stored in the
+	 * k_thread.
+	 */
+
+	pushl	%edi
+  100b5a:	57                   	push   %edi
+
+	movl	$_kernel, %edi
+  100b5b:	bf 20 23 10 00       	mov    $0x102320,%edi
+
+	pushl	%esi
+  100b60:	56                   	push   %esi
+	pushl	%ebx
+  100b61:	53                   	push   %ebx
+	pushl	%ebp
+  100b62:	55                   	push   %ebp
+	 * -EAGAIN eliminates the need for the timeout code to set it.
+	 * If another value is ever needed, it can be modified with
+	 * _set_thread_return_value().
+	 */
+
+	pushl   _k_neg_eagain
+  100b63:	ff 35 a4 19 10 00    	pushl  0x1019a4
+
+
+	/* save esp into k_thread structure */
+
+	movl	_kernel_offset_to_current(%edi), %ecx
+  100b69:	8b 4f 08             	mov    0x8(%edi),%ecx
+	movl	%esp, _thread_offset_to_esp(%ecx)
+  100b6c:	89 61 28             	mov    %esp,0x28(%ecx)
+
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
+	/* Register the context switch */
+	call	_sys_k_event_logger_context_switch
+#endif
+	movl	_kernel_offset_to_ready_q_cache(%edi), %eax
+  100b6f:	8b 47 14             	mov    0x14(%edi),%eax
+
+#endif /* CONFIG_FP_SHARING */
+
+	/* update _kernel.current to reflect incoming thread */
+
+	movl    %eax, _kernel_offset_to_current(%edi)
+  100b72:	89 47 08             	mov    %eax,0x8(%edi)
+
+	/* recover task/fiber stack pointer from k_thread */
+
+	movl	_thread_offset_to_esp(%eax), %esp
+  100b75:	8b 60 28             	mov    0x28(%eax),%esp
+
+
+	/* load return value from a possible _set_thread_return_value() */
+
+	popl	%eax
+  100b78:	58                   	pop    %eax
+
+	/* pop the non-volatile registers from the stack */
+
+	popl	%ebp
+  100b79:	5d                   	pop    %ebp
+	popl	%ebx
+  100b7a:	5b                   	pop    %ebx
+	popl	%esi
+  100b7b:	5e                   	pop    %esi
+	popl	%edi
+  100b7c:	5f                   	pop    %edi
+	 * - in unified kernel, -EINVAL
+	 */
+
+	/* Utilize the 'eflags' parameter to _Swap() */
+
+	pushl	4(%esp)
+  100b7d:	ff 74 24 04          	pushl  0x4(%esp)
+	/* restore _Swap's %eax */
+	popl	%eax
+
+skipIntLatencyStop:
+#endif
+	popfl
+  100b81:	9d                   	popf   
+	 * will not do that for us.
+	 */
+	popl	%edx
+	movl	%edx, (%esp)
+#endif
+	ret
+  100b82:	c3                   	ret    
+
+00100b83 <_new_thread>:
+ */
+void _new_thread(char *pStackMem, size_t stackSize,
+		 _thread_entry_t pEntry,
+		 void *parameter1, void *parameter2, void *parameter3,
+		 int priority, unsigned options)
+{
+  100b83:	55                   	push   %ebp
+  100b84:	89 e5                	mov    %esp,%ebp
+  100b86:	56                   	push   %esi
+  100b87:	53                   	push   %ebx
+  100b88:	8b 75 08             	mov    0x8(%ebp),%esi
+#endif
+
+	/* carve the thread entry struct from the "base" of the stack */
+
+	pInitialThread =
+		(unsigned long *)STACK_ROUND_DOWN(pStackMem + stackSize);
+  100b8b:	8b 5d 0c             	mov    0xc(%ebp),%ebx
+  100b8e:	01 f3                	add    %esi,%ebx
+	 * primitive.
+	 */
+
+	/* push arguments required by _thread_entry() */
+
+	*--pInitialThread = (unsigned long)parameter3;
+  100b90:	8b 45 1c             	mov    0x1c(%ebp),%eax
+		(unsigned long *)STACK_ROUND_DOWN(pStackMem + stackSize);
+  100b93:	83 e3 fc             	and    $0xfffffffc,%ebx
+	*--pInitialThread = (unsigned long)parameter3;
+  100b96:	89 43 fc             	mov    %eax,-0x4(%ebx)
+	*--pInitialThread = (unsigned long)parameter2;
+  100b99:	8b 45 18             	mov    0x18(%ebp),%eax
+  100b9c:	89 43 f8             	mov    %eax,-0x8(%ebx)
+	*--pInitialThread = (unsigned long)parameter1;
+  100b9f:	8b 45 14             	mov    0x14(%ebp),%eax
+  100ba2:	89 43 f4             	mov    %eax,-0xc(%ebx)
+	*--pInitialThread = (unsigned long)pEntry;
+  100ba5:	8b 45 10             	mov    0x10(%ebp),%eax
+  100ba8:	89 43 f0             	mov    %eax,-0x10(%ebx)
+ */
+static inline unsigned int EflagsGet(void)
+{
+	unsigned int eflags; /* EFLAGS register contents */
+
+	__asm__ volatile(
+  100bab:	9c                   	pushf  
+  100bac:	58                   	pop    %eax
+
+	/* push initial EFLAGS; only modify IF and IOPL bits */
+
+	*--pInitialThread = (EflagsGet() & ~EFLAGS_MASK) | EFLAGS_INITIAL;
+  100bad:	80 e4 cd             	and    $0xcd,%ah
+
+	*--pInitialThread = (unsigned long)_thread_entry_wrapper;
+
+#else /* defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO) */
+
+	*--pInitialThread = (unsigned long)_thread_entry;
+  100bb0:	c7 43 e8 90 14 10 00 	movl   $0x101490,-0x18(%ebx)
+	*--pInitialThread = (EflagsGet() & ~EFLAGS_MASK) | EFLAGS_INITIAL;
+  100bb7:	80 cc 02             	or     $0x2,%ah
+	pInitialCtx -= 11;
+  100bba:	83 eb 2c             	sub    $0x2c,%ebx
+	*--pInitialThread = (EflagsGet() & ~EFLAGS_MASK) | EFLAGS_INITIAL;
+  100bbd:	89 43 18             	mov    %eax,0x18(%ebx)
+	_init_thread_base(&thread->base, priority, _THREAD_PRESTART, options);
+  100bc0:	ff 75 24             	pushl  0x24(%ebp)
+  100bc3:	6a 04                	push   $0x4
+  100bc5:	ff 75 20             	pushl  0x20(%ebp)
+  100bc8:	56                   	push   %esi
+  100bc9:	e8 bf 09 00 00       	call   10158d <_init_thread_base>
+	thread->init_data = NULL;
+  100bce:	c7 46 2c 00 00 00 00 	movl   $0x0,0x2c(%esi)
+	thread->fn_abort = NULL;
+  100bd5:	c7 46 30 00 00 00 00 	movl   $0x0,0x30(%esi)
+	pInitialCtx -= 11;
+  100bdc:	89 5e 28             	mov    %ebx,0x28(%esi)
+	_init_thread_base(&thread->base, priority, _THREAD_PRESTART, options);
+  100bdf:	83 c4 10             	add    $0x10,%esp
+	 * The k_thread structure is located at the "low end" of memory set
+	 * aside for the thread's stack.
+	 */
+
+	_new_thread_internal(pStackMem, stackSize, priority, options);
+}
+  100be2:	8d 65 f8             	lea    -0x8(%ebp),%esp
+  100be5:	5b                   	pop    %ebx
+  100be6:	5e                   	pop    %esi
+  100be7:	5d                   	pop    %ebp
+  100be8:	c3                   	ret    
+
+00100be9 <_debug_fatal_hook>:
+#include <misc/printk.h>
+#include <arch/x86/irq_controller.h>
+#include <arch/x86/segmentation.h>
+#include <exception.h>
+
+__weak void _debug_fatal_hook(const NANO_ESF *esf) { ARG_UNUSED(esf); }
+  100be9:	55                   	push   %ebp
+  100bea:	89 e5                	mov    %esp,%ebp
+  100bec:	5d                   	pop    %ebp
+  100bed:	c3                   	ret    
+
+00100bee <_NanoFatalErrorHandler>:
+ *
+ * @return This function does not return.
+ */
+FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
+					  const NANO_ESF *pEsf)
+{
+  100bee:	55                   	push   %ebp
+  100bef:	89 e5                	mov    %esp,%ebp
+  100bf1:	57                   	push   %edi
+  100bf2:	56                   	push   %esi
+  100bf3:	53                   	push   %ebx
+  100bf4:	83 ec 28             	sub    $0x28,%esp
+  100bf7:	8b 75 08             	mov    0x8(%ebp),%esi
+  100bfa:	8b 7d 0c             	mov    0xc(%ebp),%edi
+	_debug_fatal_hook(pEsf);
+  100bfd:	57                   	push   %edi
+  100bfe:	e8 e6 ff ff ff       	call   100be9 <_debug_fatal_hook>
+  100c03:	58                   	pop    %eax
+
+#ifdef CONFIG_PRINTK
+
+	/* Display diagnostic information about the error */
+
+	switch (reason) {
+  100c04:	83 fe 03             	cmp    $0x3,%esi
+  100c07:	74 3e                	je     100c47 <_NanoFatalErrorHandler+0x59>
+  100c09:	77 06                	ja     100c11 <_NanoFatalErrorHandler+0x23>
+  100c0b:	85 f6                	test   %esi,%esi
+  100c0d:	74 0e                	je     100c1d <_NanoFatalErrorHandler+0x2f>
+  100c0f:	eb 4a                	jmp    100c5b <_NanoFatalErrorHandler+0x6d>
+  100c11:	83 fe 05             	cmp    $0x5,%esi
+  100c14:	74 3e                	je     100c54 <_NanoFatalErrorHandler+0x66>
+  100c16:	83 fe 06             	cmp    $0x6,%esi
+  100c19:	74 4d                	je     100c68 <_NanoFatalErrorHandler+0x7a>
+  100c1b:	eb 3e                	jmp    100c5b <_NanoFatalErrorHandler+0x6d>
+ * @return the vector of the interrupt that is currently being processed, or
+ * -1 if this can't be determined
+ */
+static inline int _irq_controller_isr_vector_get(void)
+{
+	return __irq_controller_isr_vector_get();
+  100c1d:	e8 60 f9 ff ff       	call   100582 <__irq_controller_isr_vector_get>
+		break;
+
+	case _NANO_ERR_SPURIOUS_INT: {
+		int vector = _irq_controller_isr_vector_get();
+
+		printk("***** Unhandled interrupt vector ");
+  100c22:	68 be 17 10 00       	push   $0x1017be
+  100c27:	89 c3                	mov    %eax,%ebx
+  100c29:	e8 df fd ff ff       	call   100a0d <printk>
+  100c2e:	58                   	pop    %eax
+		if (vector >= 0) {
+  100c2f:	85 db                	test   %ebx,%ebx
+  100c31:	78 0d                	js     100c40 <_NanoFatalErrorHandler+0x52>
+			printk("%d ", vector);
+  100c33:	53                   	push   %ebx
+  100c34:	68 e0 17 10 00       	push   $0x1017e0
+  100c39:	e8 cf fd ff ff       	call   100a0d <printk>
+  100c3e:	5b                   	pop    %ebx
+  100c3f:	58                   	pop    %eax
+		}
+		printk("*****\n");
+  100c40:	68 07 18 10 00       	push   $0x101807
+  100c45:	eb 05                	jmp    100c4c <_NanoFatalErrorHandler+0x5e>
+		break;
+	}
+	case _NANO_ERR_INVALID_TASK_EXIT:
+		printk("***** Invalid Exit Software Error! *****\n");
+  100c47:	68 e4 17 10 00       	push   $0x1017e4
+  100c4c:	e8 bc fd ff ff       	call   100a0d <printk>
+  100c51:	59                   	pop    %ecx
+		break;
+  100c52:	eb 14                	jmp    100c68 <_NanoFatalErrorHandler+0x7a>
+		break;
+#endif /* CONFIG_STACK_CANARIES */
+
+
+	case _NANO_ERR_ALLOCATION_FAIL:
+		printk("**** Kernel Allocation Failure! ****\n");
+  100c54:	68 0e 18 10 00       	push   $0x10180e
+  100c59:	eb f1                	jmp    100c4c <_NanoFatalErrorHandler+0x5e>
+		break;
+
+	default:
+		printk("**** Unknown Fatal Error %d! ****\n", reason);
+  100c5b:	56                   	push   %esi
+  100c5c:	68 34 18 10 00       	push   $0x101834
+  100c61:	e8 a7 fd ff ff       	call   100a0d <printk>
+  100c66:	58                   	pop    %eax
+  100c67:	5a                   	pop    %edx
+		break;
+	}
+
+	printk("Current thread ID = %p\n"
+  100c68:	8b 47 04             	mov    0x4(%edi),%eax
+  100c6b:	8b 4f 2c             	mov    0x2c(%edi),%ecx
+  100c6e:	89 45 f0             	mov    %eax,-0x10(%ebp)
+  100c71:	8b 47 10             	mov    0x10(%edi),%eax
+  100c74:	89 45 ec             	mov    %eax,-0x14(%ebp)
+  100c77:	8b 47 0c             	mov    0xc(%edi),%eax
+  100c7a:	89 45 e8             	mov    %eax,-0x18(%ebp)
+  100c7d:	8b 47 14             	mov    0x14(%edi),%eax
+  100c80:	89 45 e4             	mov    %eax,-0x1c(%ebp)
+  100c83:	8b 47 1c             	mov    0x1c(%edi),%eax
+  100c86:	89 45 e0             	mov    %eax,-0x20(%ebp)
+  100c89:	8b 47 08             	mov    0x8(%edi),%eax
+  100c8c:	89 45 dc             	mov    %eax,-0x24(%ebp)
+  100c8f:	8b 47 18             	mov    0x18(%edi),%eax
+  100c92:	8b 17                	mov    (%edi),%edx
+  100c94:	89 45 d8             	mov    %eax,-0x28(%ebp)
+  100c97:	8b 47 24             	mov    0x24(%edi),%eax
+  100c9a:	89 4d cc             	mov    %ecx,-0x34(%ebp)
+  100c9d:	89 55 d0             	mov    %edx,-0x30(%ebp)
+  100ca0:	89 45 d4             	mov    %eax,-0x2c(%ebp)
+  100ca3:	0f b7 5f 28          	movzwl 0x28(%edi),%ebx
+  100ca7:	e8 cf 04 00 00       	call   10117b <k_current_get>
+  100cac:	8b 4d cc             	mov    -0x34(%ebp),%ecx
+  100caf:	8b 55 d0             	mov    -0x30(%ebp),%edx
+  100cb2:	51                   	push   %ecx
+  100cb3:	52                   	push   %edx
+  100cb4:	ff 75 f0             	pushl  -0x10(%ebp)
+  100cb7:	ff 75 ec             	pushl  -0x14(%ebp)
+  100cba:	ff 75 e8             	pushl  -0x18(%ebp)
+  100cbd:	ff 75 e4             	pushl  -0x1c(%ebp)
+  100cc0:	ff 75 e0             	pushl  -0x20(%ebp)
+  100cc3:	ff 75 dc             	pushl  -0x24(%ebp)
+  100cc6:	ff 75 d8             	pushl  -0x28(%ebp)
+  100cc9:	ff 75 d4             	pushl  -0x2c(%ebp)
+  100ccc:	53                   	push   %ebx
+  100ccd:	50                   	push   %eax
+  100cce:	68 57 18 10 00       	push   $0x101857
+  100cd3:	e8 35 fd ff ff       	call   100a0d <printk>
+  100cd8:	83 c4 34             	add    $0x34,%esp
+	/*
+	 * Error was fatal to a kernel task or a fiber; invoke the system
+	 * fatal error handling policy defined for the platform.
+	 */
+
+	_SysFatalErrorHandler(reason, pEsf);
+  100cdb:	57                   	push   %edi
+  100cdc:	56                   	push   %esi
+  100cdd:	e8 5f fd ff ff       	call   100a41 <_SysFatalErrorHandler>
+
+00100ce2 <generic_exc_handle>:
+
+#if CONFIG_EXCEPTION_DEBUG
+
+static FUNC_NORETURN void generic_exc_handle(unsigned int vector,
+					     const NANO_ESF *pEsf)
+{
+  100ce2:	55                   	push   %ebp
+  100ce3:	89 e5                	mov    %esp,%ebp
+  100ce5:	56                   	push   %esi
+  100ce6:	89 c6                	mov    %eax,%esi
+  100ce8:	53                   	push   %ebx
+  100ce9:	89 d3                	mov    %edx,%ebx
+	printk("***** CPU exception %d\n", vector);
+  100ceb:	50                   	push   %eax
+  100cec:	68 f6 18 10 00       	push   $0x1018f6
+  100cf1:	e8 17 fd ff ff       	call   100a0d <printk>
+  100cf6:	59                   	pop    %ecx
+  100cf7:	58                   	pop    %eax
+	if ((1 << vector) & _EXC_ERROR_CODE_FAULTS) {
+  100cf8:	b8 00 7d 02 00       	mov    $0x27d00,%eax
+  100cfd:	0f a3 f0             	bt     %esi,%eax
+  100d00:	73 0f                	jae    100d11 <generic_exc_handle+0x2f>
+		printk("***** Exception code: 0x%x\n", pEsf->errorCode);
+  100d02:	ff 73 20             	pushl  0x20(%ebx)
+  100d05:	68 0e 19 10 00       	push   $0x10190e
+  100d0a:	e8 fe fc ff ff       	call   100a0d <printk>
+  100d0f:	58                   	pop    %eax
+  100d10:	5a                   	pop    %edx
+	}
+	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, pEsf);
+  100d11:	53                   	push   %ebx
+  100d12:	6a 06                	push   $0x6
+  100d14:	e8 d5 fe ff ff       	call   100bee <_NanoFatalErrorHandler>
+
+00100d19 <handle_exc_0>:
+	_EXC_FUNC_NOCODE(vector)
+
+#define EXC_FUNC_CODE(vector) \
+	_EXC_FUNC_CODE(vector)
+
+EXC_FUNC_NOCODE(IV_DIVIDE_ERROR);
+  100d19:	55                   	push   %ebp
+  100d1a:	31 c0                	xor    %eax,%eax
+  100d1c:	89 e5                	mov    %esp,%ebp
+  100d1e:	8b 55 08             	mov    0x8(%ebp),%edx
+  100d21:	e8 bc ff ff ff       	call   100ce2 <generic_exc_handle>
+
+00100d26 <handle_exc_2>:
+EXC_FUNC_NOCODE(IV_NON_MASKABLE_INTERRUPT);
+  100d26:	55                   	push   %ebp
+  100d27:	b8 02 00 00 00       	mov    $0x2,%eax
+  100d2c:	89 e5                	mov    %esp,%ebp
+  100d2e:	8b 55 08             	mov    0x8(%ebp),%edx
+  100d31:	e8 ac ff ff ff       	call   100ce2 <generic_exc_handle>
+
+00100d36 <handle_exc_4>:
+EXC_FUNC_NOCODE(IV_OVERFLOW);
+  100d36:	55                   	push   %ebp
+  100d37:	b8 04 00 00 00       	mov    $0x4,%eax
+  100d3c:	89 e5                	mov    %esp,%ebp
+  100d3e:	8b 55 08             	mov    0x8(%ebp),%edx
+  100d41:	e8 9c ff ff ff       	call   100ce2 <generic_exc_handle>
+
+00100d46 <handle_exc_5>:
+EXC_FUNC_NOCODE(IV_BOUND_RANGE);
+  100d46:	55                   	push   %ebp
+  100d47:	b8 05 00 00 00       	mov    $0x5,%eax
+  100d4c:	89 e5                	mov    %esp,%ebp
+  100d4e:	8b 55 08             	mov    0x8(%ebp),%edx
+  100d51:	e8 8c ff ff ff       	call   100ce2 <generic_exc_handle>
+
+00100d56 <handle_exc_6>:
+EXC_FUNC_NOCODE(IV_INVALID_OPCODE);
+  100d56:	55                   	push   %ebp
+  100d57:	b8 06 00 00 00       	mov    $0x6,%eax
+  100d5c:	89 e5                	mov    %esp,%ebp
+  100d5e:	8b 55 08             	mov    0x8(%ebp),%edx
+  100d61:	e8 7c ff ff ff       	call   100ce2 <generic_exc_handle>
+
+00100d66 <handle_exc_7>:
+EXC_FUNC_NOCODE(IV_DEVICE_NOT_AVAILABLE);
+  100d66:	55                   	push   %ebp
+  100d67:	b8 07 00 00 00       	mov    $0x7,%eax
+  100d6c:	89 e5                	mov    %esp,%ebp
+  100d6e:	8b 55 08             	mov    0x8(%ebp),%edx
+  100d71:	e8 6c ff ff ff       	call   100ce2 <generic_exc_handle>
+
+00100d76 <handle_exc_8>:
+EXC_FUNC_CODE(IV_DOUBLE_FAULT);
+  100d76:	55                   	push   %ebp
+  100d77:	b8 08 00 00 00       	mov    $0x8,%eax
+  100d7c:	89 e5                	mov    %esp,%ebp
+  100d7e:	8b 55 08             	mov    0x8(%ebp),%edx
+  100d81:	e8 5c ff ff ff       	call   100ce2 <generic_exc_handle>
+
+00100d86 <handle_exc_10>:
+EXC_FUNC_CODE(IV_INVALID_TSS);
+  100d86:	55                   	push   %ebp
+  100d87:	b8 0a 00 00 00       	mov    $0xa,%eax
+  100d8c:	89 e5                	mov    %esp,%ebp
+  100d8e:	8b 55 08             	mov    0x8(%ebp),%edx
+  100d91:	e8 4c ff ff ff       	call   100ce2 <generic_exc_handle>
+
+00100d96 <handle_exc_11>:
+EXC_FUNC_CODE(IV_SEGMENT_NOT_PRESENT);
+  100d96:	55                   	push   %ebp
+  100d97:	b8 0b 00 00 00       	mov    $0xb,%eax
+  100d9c:	89 e5                	mov    %esp,%ebp
+  100d9e:	8b 55 08             	mov    0x8(%ebp),%edx
+  100da1:	e8 3c ff ff ff       	call   100ce2 <generic_exc_handle>
+
+00100da6 <handle_exc_12>:
+EXC_FUNC_CODE(IV_STACK_FAULT);
+  100da6:	55                   	push   %ebp
+  100da7:	b8 0c 00 00 00       	mov    $0xc,%eax
+  100dac:	89 e5                	mov    %esp,%ebp
+  100dae:	8b 55 08             	mov    0x8(%ebp),%edx
+  100db1:	e8 2c ff ff ff       	call   100ce2 <generic_exc_handle>
+
+00100db6 <handle_exc_13>:
+EXC_FUNC_CODE(IV_GENERAL_PROTECTION);
+  100db6:	55                   	push   %ebp
+  100db7:	b8 0d 00 00 00       	mov    $0xd,%eax
+  100dbc:	89 e5                	mov    %esp,%ebp
+  100dbe:	8b 55 08             	mov    0x8(%ebp),%edx
+  100dc1:	e8 1c ff ff ff       	call   100ce2 <generic_exc_handle>
+
+00100dc6 <handle_exc_14>:
+EXC_FUNC_CODE(IV_PAGE_FAULT);
+  100dc6:	55                   	push   %ebp
+  100dc7:	b8 0e 00 00 00       	mov    $0xe,%eax
+  100dcc:	89 e5                	mov    %esp,%ebp
+  100dce:	8b 55 08             	mov    0x8(%ebp),%edx
+  100dd1:	e8 0c ff ff ff       	call   100ce2 <generic_exc_handle>
+
+00100dd6 <handle_exc_16>:
+EXC_FUNC_NOCODE(IV_X87_FPU_FP_ERROR);
+  100dd6:	55                   	push   %ebp
+  100dd7:	b8 10 00 00 00       	mov    $0x10,%eax
+  100ddc:	89 e5                	mov    %esp,%ebp
+  100dde:	8b 55 08             	mov    0x8(%ebp),%edx
+  100de1:	e8 fc fe ff ff       	call   100ce2 <generic_exc_handle>
+
+00100de6 <handle_exc_17>:
+EXC_FUNC_CODE(IV_ALIGNMENT_CHECK);
+  100de6:	55                   	push   %ebp
+  100de7:	b8 11 00 00 00       	mov    $0x11,%eax
+  100dec:	89 e5                	mov    %esp,%ebp
+  100dee:	8b 55 08             	mov    0x8(%ebp),%edx
+  100df1:	e8 ec fe ff ff       	call   100ce2 <generic_exc_handle>
+
+00100df6 <handle_exc_18>:
+EXC_FUNC_NOCODE(IV_MACHINE_CHECK);
+  100df6:	55                   	push   %ebp
+  100df7:	b8 12 00 00 00       	mov    $0x12,%eax
+  100dfc:	89 e5                	mov    %esp,%ebp
+  100dfe:	8b 55 08             	mov    0x8(%ebp),%edx
+  100e01:	e8 dc fe ff ff       	call   100ce2 <generic_exc_handle>
+
+00100e06 <_sys_device_do_config_level>:
+ * off and the next one begins.
+ *
+ * @param level init level to run.
+ */
+void _sys_device_do_config_level(int level)
+{
+  100e06:	55                   	push   %ebp
+  100e07:	89 e5                	mov    %esp,%ebp
+  100e09:	56                   	push   %esi
+  100e0a:	53                   	push   %ebx
+  100e0b:	8b 45 08             	mov    0x8(%ebp),%eax
+	struct device *info;
+
+	for (info = config_levels[level]; info < config_levels[level+1]; info++) {
+  100e0e:	8b 1c 85 80 19 10 00 	mov    0x101980(,%eax,4),%ebx
+  100e15:	8d 70 01             	lea    0x1(%eax),%esi
+  100e18:	3b 1c b5 80 19 10 00 	cmp    0x101980(,%esi,4),%ebx
+  100e1f:	73 0c                	jae    100e2d <_sys_device_do_config_level+0x27>
+		struct device_config *device = info->config;
+
+		device->init(info);
+  100e21:	8b 03                	mov    (%ebx),%eax
+  100e23:	53                   	push   %ebx
+	for (info = config_levels[level]; info < config_levels[level+1]; info++) {
+  100e24:	83 c3 0c             	add    $0xc,%ebx
+		device->init(info);
+  100e27:	ff 50 04             	call   *0x4(%eax)
+  100e2a:	58                   	pop    %eax
+  100e2b:	eb eb                	jmp    100e18 <_sys_device_do_config_level+0x12>
+	}
+}
+  100e2d:	8d 65 f8             	lea    -0x8(%ebp),%esp
+  100e30:	5b                   	pop    %ebx
+  100e31:	5e                   	pop    %esi
+  100e32:	5d                   	pop    %ebp
+  100e33:	c3                   	ret    
+
+00100e34 <device_get_binding>:
+
+struct device *device_get_binding(const char *name)
+{
+  100e34:	55                   	push   %ebp
+  100e35:	89 e5                	mov    %esp,%ebp
+  100e37:	53                   	push   %ebx
+	struct device *info;
+
+	for (info = __device_init_start; info != __device_init_end; info++) {
+  100e38:	bb 9c 22 10 00       	mov    $0x10229c,%ebx
+  100e3d:	81 fb fc 22 10 00    	cmp    $0x1022fc,%ebx
+  100e43:	74 1f                	je     100e64 <device_get_binding+0x30>
+		if (info->driver_api && !strcmp(name, info->config->name)) {
+  100e45:	83 7b 04 00          	cmpl   $0x0,0x4(%ebx)
+  100e49:	75 05                	jne    100e50 <device_get_binding+0x1c>
+	for (info = __device_init_start; info != __device_init_end; info++) {
+  100e4b:	83 c3 0c             	add    $0xc,%ebx
+  100e4e:	eb ed                	jmp    100e3d <device_get_binding+0x9>
+		if (info->driver_api && !strcmp(name, info->config->name)) {
+  100e50:	8b 03                	mov    (%ebx),%eax
+  100e52:	ff 30                	pushl  (%eax)
+  100e54:	ff 75 08             	pushl  0x8(%ebp)
+  100e57:	e8 4c f8 ff ff       	call   1006a8 <strcmp>
+  100e5c:	5a                   	pop    %edx
+  100e5d:	85 c0                	test   %eax,%eax
+  100e5f:	59                   	pop    %ecx
+  100e60:	75 e9                	jne    100e4b <device_get_binding+0x17>
+  100e62:	eb 02                	jmp    100e66 <device_get_binding+0x32>
+			return info;
+		}
+	}
+
+	return NULL;
+  100e64:	31 db                	xor    %ebx,%ebx
+}
+  100e66:	89 d8                	mov    %ebx,%eax
+  100e68:	8b 5d fc             	mov    -0x4(%ebp),%ebx
+  100e6b:	c9                   	leave  
+  100e6c:	c3                   	ret    
+
+00100e6d <_main>:
+ * init functions, then invokes application's main() routine.
+ *
+ * @return N/A
+ */
+static void _main(void *unused1, void *unused2, void *unused3)
+{
+  100e6d:	55                   	push   %ebp
+  100e6e:	89 e5                	mov    %esp,%ebp
+	ARG_UNUSED(unused1);
+	ARG_UNUSED(unused2);
+	ARG_UNUSED(unused3);
+
+	_sys_device_do_config_level(_SYS_INIT_LEVEL_POST_KERNEL);
+  100e70:	6a 02                	push   $0x2
+  100e72:	e8 8f ff ff ff       	call   100e06 <_sys_device_do_config_level>
+
+	/* These 3 are deprecated */
+	_sys_device_do_config_level(_SYS_INIT_LEVEL_SECONDARY);
+  100e77:	c7 04 24 05 00 00 00 	movl   $0x5,(%esp)
+  100e7e:	e8 83 ff ff ff       	call   100e06 <_sys_device_do_config_level>
+	_sys_device_do_config_level(_SYS_INIT_LEVEL_NANOKERNEL);
+  100e83:	c7 04 24 06 00 00 00 	movl   $0x6,(%esp)
+  100e8a:	e8 77 ff ff ff       	call   100e06 <_sys_device_do_config_level>
+	_sys_device_do_config_level(_SYS_INIT_LEVEL_MICROKERNEL);
+  100e8f:	c7 04 24 07 00 00 00 	movl   $0x7,(%esp)
+  100e96:	e8 6b ff ff ff       	call   100e06 <_sys_device_do_config_level>
+
+	/* Final init level before app starts */
+	_sys_device_do_config_level(_SYS_INIT_LEVEL_APPLICATION);
+  100e9b:	c7 04 24 03 00 00 00 	movl   $0x3,(%esp)
+  100ea2:	e8 5f ff ff ff       	call   100e06 <_sys_device_do_config_level>
+  100ea7:	58                   	pop    %eax
+	extern void __do_init_array_aux(void);
+	__do_global_ctors_aux();
+	__do_init_array_aux();
+#endif
+
+	_init_static_threads();
+  100ea8:	e8 67 06 00 00       	call   101514 <_init_static_threads>
+	 */
+#if defined(MDEF_MAIN_THREAD_PRIORITY) && \
+		(MDEF_MAIN_THREAD_PRIORITY != CONFIG_MAIN_THREAD_PRIORITY)
+	k_thread_priority_set(_main_thread, MDEF_MAIN_THREAD_PRIORITY);
+#endif
+	main();
+  100ead:	e8 07 f3 ff ff       	call   1001b9 <main>
+
+	/* Terminate thread normally since it has no more work to do */
+	_main_thread->base.user_options &= ~K_ESSENTIAL;
+  100eb2:	80 25 68 2d 10 00 fe 	andb   $0xfe,0x102d68
+}
+  100eb9:	c9                   	leave  
+  100eba:	c3                   	ret    
+
+00100ebb <_Cstart>:
+ * cleared/zeroed.
+ *
+ * @return Does not return
+ */
+FUNC_NORETURN void _Cstart(void)
+{
+  100ebb:	55                   	push   %ebp
+  100ebc:	89 e5                	mov    %esp,%ebp
+  100ebe:	83 ec 38             	sub    $0x38,%esp
+	_current = dummy_thread;
+  100ec1:	8d 45 c8             	lea    -0x38(%ebp),%eax
+	dummy_thread->base.user_options = K_ESSENTIAL;
+  100ec4:	c6 45 d0 01          	movb   $0x1,-0x30(%ebp)
+	_current = dummy_thread;
+  100ec8:	a3 28 23 10 00       	mov    %eax,0x102328
+	dummy_thread->base.user_options = K_ESSENTIAL;
+  100ecd:	b8 1c 00 00 00       	mov    $0x1c,%eax
+  100ed2:	8d 90 20 23 10 00    	lea    0x102320(%eax),%edx
+  100ed8:	83 c0 08             	add    $0x8,%eax
+ * @return N/A
+ */
+
+static inline void sys_dlist_init(sys_dlist_t *list)
+{
+	list->head = (sys_dnode_t *)list;
+  100edb:	89 90 18 23 10 00    	mov    %edx,0x102318(%eax)
+	list->tail = (sys_dnode_t *)list;
+  100ee1:	89 90 1c 23 10 00    	mov    %edx,0x10231c(%eax)
+	for (int ii = 0; ii < K_NUM_PRIORITIES; ii++) {
+  100ee7:	3d 1c 01 00 00       	cmp    $0x11c,%eax
+  100eec:	75 e4                	jne    100ed2 <_Cstart+0x17>
+	_new_thread(_main_stack, MAIN_STACK_SIZE,
+  100eee:	6a 01                	push   $0x1
+  100ef0:	6a 00                	push   $0x0
+  100ef2:	6a 00                	push   $0x0
+  100ef4:	6a 00                	push   $0x0
+  100ef6:	6a 00                	push   $0x0
+  100ef8:	68 6d 0e 10 00       	push   $0x100e6d
+  100efd:	68 00 04 00 00       	push   $0x400
+  100f02:	68 60 2d 10 00       	push   $0x102d60
+	_ready_q.cache = _main_thread;
+  100f07:	c7 05 34 23 10 00 60 	movl   $0x102d60,0x102334
+  100f0e:	2d 10 00 
+	_new_thread(_main_stack, MAIN_STACK_SIZE,
+  100f11:	e8 6d fc ff ff       	call   100b83 <_new_thread>
+  100f16:	83 c4 20             	add    $0x20,%esp
+ *
+ * This routine must be called with interrupts locked.
+ */
+static inline void _mark_thread_as_started(struct k_thread *thread)
+{
+	thread->base.thread_state &= ~_THREAD_PRESTART;
+  100f19:	80 25 69 2d 10 00 fb 	andb   $0xfb,0x102d69
+	_add_thread_to_ready_q(_main_thread);
+  100f20:	68 60 2d 10 00       	push   $0x102d60
+  100f25:	e8 ca 00 00 00       	call   100ff4 <_add_thread_to_ready_q>
+	_new_thread(_idle_stack, IDLE_STACK_SIZE,
+  100f2a:	c7 04 24 01 00 00 00 	movl   $0x1,(%esp)
+  100f31:	6a 0f                	push   $0xf
+  100f33:	6a 00                	push   $0x0
+  100f35:	6a 00                	push   $0x0
+  100f37:	6a 00                	push   $0x0
+  100f39:	68 f6 15 10 00       	push   $0x1015f6
+  100f3e:	68 00 01 00 00       	push   $0x100
+  100f43:	68 60 2c 10 00       	push   $0x102c60
+  100f48:	e8 36 fc ff ff       	call   100b83 <_new_thread>
+  100f4d:	83 c4 20             	add    $0x20,%esp
+	_add_thread_to_ready_q(_idle_thread);
+  100f50:	68 60 2c 10 00       	push   $0x102c60
+  100f55:	80 25 69 2c 10 00 fb 	andb   $0xfb,0x102c69
+  100f5c:	e8 93 00 00 00       	call   100ff4 <_add_thread_to_ready_q>
+	 */
+
+	prepare_multithreading(dummy_thread);
+
+	/* Deprecated */
+	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRIMARY);
+  100f61:	c7 04 24 04 00 00 00 	movl   $0x4,(%esp)
+	list->head = (sys_dnode_t *)list;
+  100f68:	c7 05 2c 23 10 00 2c 	movl   $0x10232c,0x10232c
+  100f6f:	23 10 00 
+	list->tail = (sys_dnode_t *)list;
+  100f72:	c7 05 30 23 10 00 2c 	movl   $0x10232c,0x102330
+  100f79:	23 10 00 
+	extern void *_dummy_exception_vector_stub;
+	extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
+
+	extern void _exception_enter(void);
+
+	_kernel.nested = 0;
+  100f7c:	c7 05 20 23 10 00 00 	movl   $0x0,0x102320
+  100f83:	00 00 00 
+
+	_kernel.irq_stack = _interrupt_stack + CONFIG_ISR_STACK_SIZE;
+  100f86:	c7 05 24 23 10 00 60 	movl   $0x102c60,0x102324
+  100f8d:	2c 10 00 
+	 * Forces the inclusion of the spurious interrupt handlers. If a
+	 * reference isn't made then intconnect.o is never pulled in by the
+	 * linker.
+	 */
+
+	_dummy_spurious_interrupt = &__isr___SpuriousIntHandler;
+  100f90:	c7 05 4c 24 10 00 00 	movl   $0x800,0x10244c
+  100f97:	08 00 00 
+	 * Forces the inclusion of the exception vector stub code. If a
+	 * reference isn't made then excstubs.o is never pulled in by the
+	 * linker.
+	 */
+
+	_dummy_exception_vector_stub = &_exception_enter;
+  100f9a:	c7 05 44 24 10 00 bd 	movl   $0x100abd,0x102444
+  100fa1:	0a 10 00 
+  100fa4:	e8 5d fe ff ff       	call   100e06 <_sys_device_do_config_level>
+
+	/* perform basic hardware initialization */
+	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_1);
+  100fa9:	c7 04 24 00 00 00 00 	movl   $0x0,(%esp)
+  100fb0:	e8 51 fe ff ff       	call   100e06 <_sys_device_do_config_level>
+	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_2);
+  100fb5:	c7 04 24 01 00 00 00 	movl   $0x1,(%esp)
+  100fbc:	e8 45 fe ff ff       	call   100e06 <_sys_device_do_config_level>
+	__stack_chk_guard = (void *)sys_rand32_get();
+#endif
+
+	/* display boot banner */
+
+	PRINT_BOOT_BANNER();
+  100fc1:	c7 04 24 a8 19 10 00 	movl   $0x1019a8,(%esp)
+  100fc8:	68 c4 19 10 00       	push   $0x1019c4
+  100fcd:	e8 3b fa ff ff       	call   100a0d <printk>
+  100fd2:	58                   	pop    %eax
+  100fd3:	5a                   	pop    %edx
+	__asm__ volatile (
+  100fd4:	9c                   	pushf  
+  100fd5:	fa                   	cli    
+  100fd6:	58                   	pop    %eax
+	_Swap(irq_lock());
+  100fd7:	50                   	push   %eax
+  100fd8:	e8 7d fb ff ff       	call   100b5a <_Swap>
+  100fdd:	59                   	pop    %ecx
+
+00100fde <_get_highest_ready_prio>:
+{
+  100fde:	55                   	push   %ebp
+  100fdf:	89 e5                	mov    %esp,%ebp
+	__asm__ volatile (
+  100fe1:	0f bc 05 38 23 10 00 	bsf    0x102338,%eax
+  100fe8:	75 05                	jne    100fef <_get_highest_ready_prio+0x11>
+  100fea:	b8 ff ff ff ff       	mov    $0xffffffff,%eax
+	return abs_prio - _NUM_COOP_PRIO;
+  100fef:	83 e8 10             	sub    $0x10,%eax
+}
+  100ff2:	5d                   	pop    %ebp
+  100ff3:	c3                   	ret    
+
+00100ff4 <_add_thread_to_ready_q>:
+ *
+ * Interrupts must be locked when calling this function.
+ */
+
+void _add_thread_to_ready_q(struct k_thread *thread)
+{
+  100ff4:	55                   	push   %ebp
+  100ff5:	89 e5                	mov    %esp,%ebp
+  100ff7:	56                   	push   %esi
+  100ff8:	53                   	push   %ebx
+	return (1 << ((prio + _NUM_COOP_PRIO) & 0x1f));
+  100ff9:	bb 01 00 00 00       	mov    $0x1,%ebx
+  100ffe:	8b 45 08             	mov    0x8(%ebp),%eax
+#ifdef CONFIG_MULTITHREADING
+	int q_index = _get_ready_q_q_index(thread->base.prio);
+  101001:	0f be 50 0a          	movsbl 0xa(%eax),%edx
+	return prio + _NUM_COOP_PRIO;
+  101005:	8d 4a 10             	lea    0x10(%edx),%ecx
+	sys_dlist_t *q = &_ready_q.q[q_index];
+  101008:	83 c2 12             	add    $0x12,%edx
+	return (prio + _NUM_COOP_PRIO) >> 5;
+  10100b:	89 ce                	mov    %ecx,%esi
+  10100d:	c1 fe 05             	sar    $0x5,%esi
+	return (1 << ((prio + _NUM_COOP_PRIO) & 0x1f));
+  101010:	d3 e3                	shl    %cl,%ebx
+  101012:	8d 0c d5 2c 23 10 00 	lea    0x10232c(,%edx,8),%ecx
+	*bmap |= _get_ready_q_prio_bit(prio);
+  101019:	09 1c b5 38 23 10 00 	or     %ebx,0x102338(,%esi,4)
+	sys_dlist_t *q = &_ready_q.q[q_index];
+  101020:	89 08                	mov    %ecx,(%eax)
+ */
+
+static inline void sys_dlist_append(sys_dlist_t *list, sys_dnode_t *node)
+{
+	node->next = list;
+	node->prev = list->tail;
+  101022:	8b 0c d5 30 23 10 00 	mov    0x102330(,%edx,8),%ecx
+  101029:	89 48 04             	mov    %ecx,0x4(%eax)
+
+	list->tail->next = node;
+  10102c:	8b 0c d5 30 23 10 00 	mov    0x102330(,%edx,8),%ecx
+  101033:	89 01                	mov    %eax,(%ecx)
+	list->tail = node;
+  101035:	89 04 d5 30 23 10 00 	mov    %eax,0x102330(,%edx,8)
+	_set_ready_q_prio_bit(thread->base.prio);
+	sys_dlist_append(q, &thread->base.k_q_node);
+
+	struct k_thread **cache = &_ready_q.cache;
+
+	*cache = _is_t1_higher_prio_than_t2(thread, *cache) ? thread : *cache;
+  10103c:	8b 15 34 23 10 00    	mov    0x102334,%edx
+  101042:	8a 5a 0a             	mov    0xa(%edx),%bl
+  101045:	38 58 0a             	cmp    %bl,0xa(%eax)
+  101048:	7c 02                	jl     10104c <_add_thread_to_ready_q+0x58>
+  10104a:	89 d0                	mov    %edx,%eax
+#else
+	sys_dlist_append(&_ready_q.q[0], &thread->base.k_q_node);
+	_ready_q.prio_bmap[0] = 1;
+	_ready_q.cache = thread;
+#endif
+}
+  10104c:	5b                   	pop    %ebx
+	*cache = _is_t1_higher_prio_than_t2(thread, *cache) ? thread : *cache;
+  10104d:	a3 34 23 10 00       	mov    %eax,0x102334
+}
+  101052:	5e                   	pop    %esi
+  101053:	5d                   	pop    %ebp
+  101054:	c3                   	ret    
+
+00101055 <_remove_thread_from_ready_q>:
+ *
+ * Interrupts must be locked when calling this function.
+ */
+
+void _remove_thread_from_ready_q(struct k_thread *thread)
+{
+  101055:	55                   	push   %ebp
+  101056:	89 e5                	mov    %esp,%ebp
+  101058:	53                   	push   %ebx
+  101059:	8b 45 08             	mov    0x8(%ebp),%eax
+ * @return N/A
+ */
+
+static inline void sys_dlist_remove(sys_dnode_t *node)
+{
+	node->prev->next = node->next;
+  10105c:	8b 48 04             	mov    0x4(%eax),%ecx
+  10105f:	8b 18                	mov    (%eax),%ebx
+#ifdef CONFIG_MULTITHREADING
+	int q_index = _get_ready_q_q_index(thread->base.prio);
+  101061:	0f be 50 0a          	movsbl 0xa(%eax),%edx
+  101065:	89 19                	mov    %ebx,(%ecx)
+	node->next->prev = node->prev;
+  101067:	8b 18                	mov    (%eax),%ebx
+  101069:	89 4b 04             	mov    %ecx,0x4(%ebx)
+	sys_dlist_t *q = &_ready_q.q[q_index];
+  10106c:	8d 0c d5 bc 23 10 00 	lea    0x1023bc(,%edx,8),%ecx
+
+	sys_dlist_remove(&thread->base.k_q_node);
+	if (sys_dlist_is_empty(q)) {
+  101073:	3b 0c d5 bc 23 10 00 	cmp    0x1023bc(,%edx,8),%ecx
+  10107a:	75 1c                	jne    101098 <_remove_thread_from_ready_q+0x43>
+		_clear_ready_q_prio_bit(thread->base.prio);
+  10107c:	0f be 48 0a          	movsbl 0xa(%eax),%ecx
+	return (prio + _NUM_COOP_PRIO) >> 5;
+  101080:	83 c1 10             	add    $0x10,%ecx
+	return (1 << ((prio + _NUM_COOP_PRIO) & 0x1f));
+  101083:	ba 01 00 00 00       	mov    $0x1,%edx
+	return (prio + _NUM_COOP_PRIO) >> 5;
+  101088:	89 cb                	mov    %ecx,%ebx
+  10108a:	c1 fb 05             	sar    $0x5,%ebx
+	return (1 << ((prio + _NUM_COOP_PRIO) & 0x1f));
+  10108d:	d3 e2                	shl    %cl,%edx
+	*bmap &= ~_get_ready_q_prio_bit(prio);
+  10108f:	f7 d2                	not    %edx
+  101091:	21 14 9d 38 23 10 00 	and    %edx,0x102338(,%ebx,4)
+	}
+
+	struct k_thread **cache = &_ready_q.cache;
+
+	*cache = *cache == thread ? _get_ready_q_head() : *cache;
+  101098:	8b 15 34 23 10 00    	mov    0x102334,%edx
+  10109e:	39 d0                	cmp    %edx,%eax
+  1010a0:	75 0c                	jne    1010ae <_remove_thread_from_ready_q+0x59>
+	int prio = _get_highest_ready_prio();
+  1010a2:	e8 37 ff ff ff       	call   100fde <_get_highest_ready_prio>
+  1010a7:	8b 14 c5 bc 23 10 00 	mov    0x1023bc(,%eax,8),%edx
+#else
+	_ready_q.prio_bmap[0] = 0;
+	_ready_q.cache = NULL;
+	sys_dlist_remove(&thread->base.k_q_node);
+#endif
+}
+  1010ae:	5b                   	pop    %ebx
+	*cache = *cache == thread ? _get_ready_q_head() : *cache;
+  1010af:	89 15 34 23 10 00    	mov    %edx,0x102334
+}
+  1010b5:	5d                   	pop    %ebp
+  1010b6:	c3                   	ret    
+
+001010b7 <__must_switch_threads>:
+/*
+ * Check if there is a thread of higher prio than the current one. Should only
+ * be called if we already know that the current thread is preemptible.
+ */
+int __must_switch_threads(void)
+{
+  1010b7:	55                   	push   %ebp
+		_current->base.prio, _get_highest_ready_prio());
+
+	extern void _dump_ready_q(void);
+	_dump_ready_q();
+
+	return _is_prio_higher(_get_highest_ready_prio(), _current->base.prio);
+  1010b8:	a1 28 23 10 00       	mov    0x102328,%eax
+{
+  1010bd:	89 e5                	mov    %esp,%ebp
+	return _is_prio_higher(_get_highest_ready_prio(), _current->base.prio);
+  1010bf:	0f be 50 0a          	movsbl 0xa(%eax),%edx
+  1010c3:	e8 16 ff ff ff       	call   100fde <_get_highest_ready_prio>
+#else
+	return 0;
+#endif
+}
+  1010c8:	5d                   	pop    %ebp
+	return prio1 < prio2;
+  1010c9:	39 c2                	cmp    %eax,%edx
+  1010cb:	0f 9f c0             	setg   %al
+  1010ce:	0f b6 c0             	movzbl %al,%eax
+  1010d1:	c3                   	ret    
+
+001010d2 <_reschedule_threads>:
+{
+  1010d2:	55                   	push   %ebp
+	return _is_preempt(_current) && __must_switch_threads();
+  1010d3:	a1 28 23 10 00       	mov    0x102328,%eax
+  1010d8:	89 e5                	mov    %esp,%ebp
+  1010da:	66 83 78 0a 7f       	cmpw   $0x7f,0xa(%eax)
+  1010df:	8b 4d 08             	mov    0x8(%ebp),%ecx
+  1010e2:	77 09                	ja     1010ed <_reschedule_threads+0x1b>
+  1010e4:	e8 ce ff ff ff       	call   1010b7 <__must_switch_threads>
+  1010e9:	85 c0                	test   %eax,%eax
+  1010eb:	75 09                	jne    1010f6 <_reschedule_threads+0x24>
+  1010ed:	0f ba e1 09          	bt     $0x9,%ecx
+  1010f1:	73 0c                	jae    1010ff <_reschedule_threads+0x2d>
+	__asm__ volatile (
+  1010f3:	fb                   	sti    
+}
+  1010f4:	eb 09                	jmp    1010ff <_reschedule_threads+0x2d>
+		_Swap(key);
+  1010f6:	89 4d 08             	mov    %ecx,0x8(%ebp)
+}
+  1010f9:	5d                   	pop    %ebp
+		_Swap(key);
+  1010fa:	e9 5b fa ff ff       	jmp    100b5a <_Swap>
+}
+  1010ff:	5d                   	pop    %ebp
+  101100:	c3                   	ret    
+
+00101101 <k_sched_unlock>:
+{
+  101101:	55                   	push   %ebp
+  101102:	89 e5                	mov    %esp,%ebp
+	__asm__ volatile (
+  101104:	9c                   	pushf  
+  101105:	fa                   	cli    
+  101106:	5a                   	pop    %edx
+	++_current->base.sched_locked;
+  101107:	a1 28 23 10 00       	mov    0x102328,%eax
+  10110c:	fe 40 0b             	incb   0xb(%eax)
+	_reschedule_threads(key);
+  10110f:	52                   	push   %edx
+  101110:	e8 bd ff ff ff       	call   1010d2 <_reschedule_threads>
+  101115:	58                   	pop    %eax
+}
+  101116:	c9                   	leave  
+  101117:	c3                   	ret    
+
+00101118 <_move_thread_to_end_of_prio_q>:
+ * This function, along with _add_thread_to_ready_q() and
+ * _remove_thread_from_ready_q(), are the _only_ places where a thread is
+ * taken off or put on the ready queue.
+ */
+void _move_thread_to_end_of_prio_q(struct k_thread *thread)
+{
+  101118:	55                   	push   %ebp
+  101119:	89 e5                	mov    %esp,%ebp
+  10111b:	56                   	push   %esi
+  10111c:	53                   	push   %ebx
+  10111d:	8b 45 08             	mov    0x8(%ebp),%eax
+#ifdef CONFIG_MULTITHREADING
+	int q_index = _get_ready_q_q_index(thread->base.prio);
+  101120:	0f be 50 0a          	movsbl 0xa(%eax),%edx
+	sys_dlist_t *q = &_ready_q.q[q_index];
+  101124:	83 c2 12             	add    $0x12,%edx
+  101127:	8d 0c d5 2c 23 10 00 	lea    0x10232c(,%edx,8),%ecx
+
+	if (sys_dlist_is_tail(q, &thread->base.k_q_node)) {
+  10112e:	3b 41 04             	cmp    0x4(%ecx),%eax
+  101131:	74 44                	je     101177 <_move_thread_to_end_of_prio_q+0x5f>
+	node->prev->next = node->next;
+  101133:	8b 58 04             	mov    0x4(%eax),%ebx
+  101136:	8b 30                	mov    (%eax),%esi
+  101138:	89 33                	mov    %esi,(%ebx)
+	node->next->prev = node->prev;
+  10113a:	8b 30                	mov    (%eax),%esi
+  10113c:	89 5e 04             	mov    %ebx,0x4(%esi)
+	node->next = list;
+  10113f:	89 08                	mov    %ecx,(%eax)
+	node->prev = list->tail;
+  101141:	8b 0c d5 30 23 10 00 	mov    0x102330(,%edx,8),%ecx
+  101148:	89 48 04             	mov    %ecx,0x4(%eax)
+	list->tail->next = node;
+  10114b:	8b 0c d5 30 23 10 00 	mov    0x102330(,%edx,8),%ecx
+  101152:	89 01                	mov    %eax,(%ecx)
+	list->tail = node;
+  101154:	89 04 d5 30 23 10 00 	mov    %eax,0x102330(,%edx,8)
+	sys_dlist_remove(&thread->base.k_q_node);
+	sys_dlist_append(q, &thread->base.k_q_node);
+
+	struct k_thread **cache = &_ready_q.cache;
+
+	*cache = *cache == thread ? _get_ready_q_head() : *cache;
+  10115b:	8b 15 34 23 10 00    	mov    0x102334,%edx
+  101161:	39 d0                	cmp    %edx,%eax
+  101163:	75 0c                	jne    101171 <_move_thread_to_end_of_prio_q+0x59>
+	int prio = _get_highest_ready_prio();
+  101165:	e8 74 fe ff ff       	call   100fde <_get_highest_ready_prio>
+  10116a:	8b 14 c5 bc 23 10 00 	mov    0x1023bc(,%eax,8),%edx
+	*cache = *cache == thread ? _get_ready_q_head() : *cache;
+  101171:	89 15 34 23 10 00    	mov    %edx,0x102334
+#endif
+}
+  101177:	5b                   	pop    %ebx
+  101178:	5e                   	pop    %esi
+  101179:	5d                   	pop    %ebp
+  10117a:	c3                   	ret    
+
+0010117b <k_current_get>:
+		_reschedule_threads(key);
+	}
+}
+
+k_tid_t k_current_get(void)
+{
+  10117b:	55                   	push   %ebp
+	return _current;
+}
+  10117c:	a1 28 23 10 00       	mov    0x102328,%eax
+{
+  101181:	89 e5                	mov    %esp,%ebp
+}
+  101183:	5d                   	pop    %ebp
+  101184:	c3                   	ret    
+
+00101185 <_nano_sys_clock_tick_announce>:
+ * timers that have expired and wake up the threads pending on them.
+ *
+ * @return N/A
+ */
+void _nano_sys_clock_tick_announce(int32_t ticks)
+{
+  101185:	55                   	push   %ebp
+  101186:	89 e5                	mov    %esp,%ebp
+  101188:	57                   	push   %edi
+  101189:	56                   	push   %esi
+  10118a:	53                   	push   %ebx
+  10118b:	83 ec 08             	sub    $0x8,%esp
+  10118e:	8b 5d 08             	mov    0x8(%ebp),%ebx
+  101191:	9c                   	pushf  
+  101192:	fa                   	cli    
+  101193:	58                   	pop    %eax
+
+	K_DEBUG("ticks: %d\n", ticks);
+
+	/* 64-bit value, ensure atomic access with irq lock */
+	key = irq_lock();
+	_sys_clock_tick_count += ticks;
+  101194:	89 df                	mov    %ebx,%edi
+  101196:	c1 ff 1f             	sar    $0x1f,%edi
+  101199:	01 1d 58 24 10 00    	add    %ebx,0x102458
+  10119f:	11 3d 5c 24 10 00    	adc    %edi,0x10245c
+  1011a5:	0f ba e0 09          	bt     $0x9,%eax
+  1011a9:	73 01                	jae    1011ac <_nano_sys_clock_tick_announce+0x27>
+	__asm__ volatile (
+  1011ab:	fb                   	sti    
+	list->head = (sys_dnode_t *)list;
+  1011ac:	8d 4d ec             	lea    -0x14(%ebp),%ecx
+  1011af:	89 4d ec             	mov    %ecx,-0x14(%ebp)
+	list->tail = (sys_dnode_t *)list;
+  1011b2:	89 4d f0             	mov    %ecx,-0x10(%ebp)
+	__asm__ volatile (
+  1011b5:	9c                   	pushf  
+  1011b6:	fa                   	cli    
+  1011b7:	5e                   	pop    %esi
+	return list->head == list;
+  1011b8:	a1 2c 23 10 00       	mov    0x10232c,%eax
+  1011bd:	89 f2                	mov    %esi,%edx
+	if (!head) {
+  1011bf:	85 c0                	test   %eax,%eax
+  1011c1:	74 07                	je     1011ca <_nano_sys_clock_tick_announce+0x45>
+  1011c3:	3d 2c 23 10 00       	cmp    $0x10232c,%eax
+  1011c8:	75 10                	jne    1011da <_nano_sys_clock_tick_announce+0x55>
+  1011ca:	0f ba e6 09          	bt     $0x9,%esi
+  1011ce:	0f 83 06 01 00 00    	jae    1012da <_nano_sys_clock_tick_announce+0x155>
+	__asm__ volatile (
+  1011d4:	fb                   	sti    
+  1011d5:	e9 00 01 00 00       	jmp    1012da <_nano_sys_clock_tick_announce+0x155>
+	head->delta_ticks_from_prev -= ticks;
+  1011da:	29 58 10             	sub    %ebx,0x10(%eax)
+	_handling_timeouts = 1;
+  1011dd:	c7 05 50 24 10 00 01 	movl   $0x1,0x102450
+  1011e4:	00 00 00 
+	while (timeout && timeout->delta_ticks_from_prev == 0) {
+  1011e7:	83 78 10 00          	cmpl   $0x0,0x10(%eax)
+  1011eb:	75 3e                	jne    10122b <_nano_sys_clock_tick_announce+0xa6>
+	node->prev->next = node->next;
+  1011ed:	8b 70 04             	mov    0x4(%eax),%esi
+  1011f0:	8b 38                	mov    (%eax),%edi
+  1011f2:	0f ba e2 09          	bt     $0x9,%edx
+  1011f6:	89 3e                	mov    %edi,(%esi)
+	node->next->prev = node->prev;
+  1011f8:	8b 38                	mov    (%eax),%edi
+  1011fa:	89 77 04             	mov    %esi,0x4(%edi)
+	node->next = list->head;
+  1011fd:	8b 75 ec             	mov    -0x14(%ebp),%esi
+  101200:	89 30                	mov    %esi,(%eax)
+	node->prev = list;
+  101202:	89 48 04             	mov    %ecx,0x4(%eax)
+	list->head->prev = node;
+  101205:	8b 75 ec             	mov    -0x14(%ebp),%esi
+	list->head = node;
+  101208:	89 45 ec             	mov    %eax,-0x14(%ebp)
+	list->head->prev = node;
+  10120b:	89 46 04             	mov    %eax,0x4(%esi)
+		timeout->delta_ticks_from_prev = _EXPIRED;
+  10120e:	c7 40 10 fe ff ff ff 	movl   $0xfffffffe,0x10(%eax)
+  101215:	73 01                	jae    101218 <_nano_sys_clock_tick_announce+0x93>
+  101217:	fb                   	sti    
+	__asm__ volatile (
+  101218:	9c                   	pushf  
+  101219:	fa                   	cli    
+  10121a:	5a                   	pop    %edx
+	return list->head == list;
+  10121b:	a1 2c 23 10 00       	mov    0x10232c,%eax
+	return sys_dlist_is_empty(list) ? NULL : list->head;
+  101220:	3d 2c 23 10 00       	cmp    $0x10232c,%eax
+  101225:	74 04                	je     10122b <_nano_sys_clock_tick_announce+0xa6>
+	while (timeout && timeout->delta_ticks_from_prev == 0) {
+  101227:	85 c0                	test   %eax,%eax
+  101229:	75 bc                	jne    1011e7 <_nano_sys_clock_tick_announce+0x62>
+  10122b:	0f ba e2 09          	bt     $0x9,%edx
+  10122f:	73 01                	jae    101232 <_nano_sys_clock_tick_announce+0xad>
+	__asm__ volatile (
+  101231:	fb                   	sti    
+	return list->head == list;
+  101232:	8b 45 ec             	mov    -0x14(%ebp),%eax
+	return node ? sys_dlist_peek_next_no_check(list, node) : NULL;
+  101235:	39 c8                	cmp    %ecx,%eax
+  101237:	74 04                	je     10123d <_nano_sys_clock_tick_announce+0xb8>
+  101239:	85 c0                	test   %eax,%eax
+  10123b:	75 0f                	jne    10124c <_nano_sys_clock_tick_announce+0xc7>
+	_handling_timeouts = 0;
+  10123d:	c7 05 50 24 10 00 00 	movl   $0x0,0x102450
+  101244:	00 00 00 
+  101247:	e9 8e 00 00 00       	jmp    1012da <_nano_sys_clock_tick_announce+0x155>
+	return (node == list->tail) ? NULL : node->next;
+  10124c:	31 f6                	xor    %esi,%esi
+  10124e:	3b 45 f0             	cmp    -0x10(%ebp),%eax
+  101251:	74 4c                	je     10129f <_nano_sys_clock_tick_announce+0x11a>
+  101253:	8b 30                	mov    (%eax),%esi
+  101255:	eb 48                	jmp    10129f <_nano_sys_clock_tick_announce+0x11a>
+/* remove a thread timing out from kernel object's wait queue */
+
+static inline void _unpend_thread_timing_out(struct k_thread *thread,
+					     struct _timeout *timeout_obj)
+{
+	if (timeout_obj->wait_q) {
+  101257:	83 78 0c 00          	cmpl   $0x0,0xc(%eax)
+  10125b:	74 17                	je     101274 <_nano_sys_clock_tick_announce+0xef>
+	node->prev->next = node->next;
+  10125d:	8b 42 04             	mov    0x4(%edx),%eax
+  101260:	8b 0a                	mov    (%edx),%ecx
+  101262:	89 08                	mov    %ecx,(%eax)
+	node->next->prev = node->prev;
+  101264:	8b 0a                	mov    (%edx),%ecx
+  101266:	89 41 04             	mov    %eax,0x4(%ecx)
+		_unpend_thread(thread);
+		thread->base.timeout.wait_q = NULL;
+  101269:	c7 42 1c 00 00 00 00 	movl   $0x0,0x1c(%edx)
+	thread->base.thread_state &= ~_THREAD_PENDING;
+  101270:	80 62 09 fd          	andb   $0xfd,0x9(%edx)
+	thread->base.thread_state &= ~_THREAD_PRESTART;
+  101274:	8a 42 09             	mov    0x9(%edx),%al
+  101277:	88 c1                	mov    %al,%cl
+  101279:	83 e1 fb             	and    $0xfffffffb,%ecx
+	return !(_is_thread_prevented_from_running(thread) ||
+  10127c:	a8 1b                	test   $0x1b,%al
+	thread->base.thread_state &= ~_THREAD_PRESTART;
+  10127e:	88 4a 09             	mov    %cl,0x9(%edx)
+	return !(_is_thread_prevented_from_running(thread) ||
+  101281:	74 3b                	je     1012be <_nano_sys_clock_tick_announce+0x139>
+  101283:	0f ba e7 09          	bt     $0x9,%edi
+  101287:	73 01                	jae    10128a <_nano_sys_clock_tick_announce+0x105>
+  101289:	fb                   	sti    
+	return node ? sys_dlist_peek_next_no_check(list, node) : NULL;
+  10128a:	85 f6                	test   %esi,%esi
+  10128c:	74 af                	je     10123d <_nano_sys_clock_tick_announce+0xb8>
+	return (node == list->tail) ? NULL : node->next;
+  10128e:	31 d2                	xor    %edx,%edx
+  101290:	39 75 f0             	cmp    %esi,-0x10(%ebp)
+  101293:	74 02                	je     101297 <_nano_sys_clock_tick_announce+0x112>
+  101295:	8b 16                	mov    (%esi),%edx
+
+static inline void _handle_expired_timeouts(sys_dlist_t *expired)
+{
+	sys_dnode_t *timeout, *next;
+
+	SYS_DLIST_FOR_EACH_NODE_SAFE(expired, timeout, next) {
+  101297:	85 f6                	test   %esi,%esi
+  101299:	74 a2                	je     10123d <_nano_sys_clock_tick_announce+0xb8>
+  10129b:	89 f0                	mov    %esi,%eax
+  10129d:	89 d6                	mov    %edx,%esi
+	node->prev->next = node->next;
+  10129f:	8b 50 04             	mov    0x4(%eax),%edx
+  1012a2:	8b 08                	mov    (%eax),%ecx
+  1012a4:	89 0a                	mov    %ecx,(%edx)
+	node->next->prev = node->prev;
+  1012a6:	8b 08                	mov    (%eax),%ecx
+  1012a8:	89 51 04             	mov    %edx,0x4(%ecx)
+	struct k_thread *thread = timeout->thread;
+  1012ab:	8b 50 08             	mov    0x8(%eax),%edx
+	__asm__ volatile (
+  1012ae:	9c                   	pushf  
+  1012af:	fa                   	cli    
+  1012b0:	5f                   	pop    %edi
+	timeout->delta_ticks_from_prev = _INACTIVE;
+  1012b1:	c7 40 10 ff ff ff ff 	movl   $0xffffffff,0x10(%eax)
+	if (thread) {
+  1012b8:	85 d2                	test   %edx,%edx
+  1012ba:	75 9b                	jne    101257 <_nano_sys_clock_tick_announce+0xd2>
+  1012bc:	eb 08                	jmp    1012c6 <_nano_sys_clock_tick_announce+0x141>
+  1012be:	83 7a 20 ff          	cmpl   $0xffffffff,0x20(%edx)
+  1012c2:	75 bf                	jne    101283 <_nano_sys_clock_tick_announce+0xfe>
+  1012c4:	eb 66                	jmp    10132c <_nano_sys_clock_tick_announce+0x1a7>
+  1012c6:	0f ba e7 09          	bt     $0x9,%edi
+  1012ca:	73 01                	jae    1012cd <_nano_sys_clock_tick_announce+0x148>
+	__asm__ volatile (
+  1012cc:	fb                   	sti    
+		if (timeout->func) {
+  1012cd:	8b 50 14             	mov    0x14(%eax),%edx
+  1012d0:	85 d2                	test   %edx,%edx
+  1012d2:	74 b6                	je     10128a <_nano_sys_clock_tick_announce+0x105>
+			timeout->func(timeout);
+  1012d4:	50                   	push   %eax
+  1012d5:	ff d2                	call   *%edx
+  1012d7:	59                   	pop    %ecx
+  1012d8:	eb b0                	jmp    10128a <_nano_sys_clock_tick_announce+0x105>
+	if (_time_slice_duration == 0) {
+  1012da:	a1 40 24 10 00       	mov    0x102440,%eax
+  1012df:	85 c0                	test   %eax,%eax
+  1012e1:	74 55                	je     101338 <_nano_sys_clock_tick_announce+0x1b3>
+	if (_is_prio_higher(_current->base.prio, _time_slice_prio_ceiling)) {
+  1012e3:	8b 15 28 23 10 00    	mov    0x102328,%edx
+  1012e9:	0f be 52 0a          	movsbl 0xa(%edx),%edx
+  1012ed:	39 15 3c 24 10 00    	cmp    %edx,0x10243c
+  1012f3:	7f 43                	jg     101338 <_nano_sys_clock_tick_announce+0x1b3>
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+
+#ifdef _NON_OPTIMIZED_TICKS_PER_SEC
+	return (MSEC_PER_SEC * (uint64_t)ticks) / sys_clock_ticks_per_sec;
+#else
+	return (uint64_t)ticks * _ms_per_tick;
+  1012f5:	6b db 0a             	imul   $0xa,%ebx,%ebx
+	_time_slice_elapsed += __ticks_to_ms(ticks);
+  1012f8:	03 1d 54 24 10 00    	add    0x102454,%ebx
+	if (_time_slice_elapsed >= _time_slice_duration) {
+  1012fe:	39 d8                	cmp    %ebx,%eax
+  101300:	7e 08                	jle    10130a <_nano_sys_clock_tick_announce+0x185>
+	_time_slice_elapsed += __ticks_to_ms(ticks);
+  101302:	89 1d 54 24 10 00    	mov    %ebx,0x102454
+  101308:	eb 2e                	jmp    101338 <_nano_sys_clock_tick_announce+0x1b3>
+		_time_slice_elapsed = 0;
+  10130a:	c7 05 54 24 10 00 00 	movl   $0x0,0x102454
+  101311:	00 00 00 
+	__asm__ volatile (
+  101314:	9c                   	pushf  
+  101315:	fa                   	cli    
+  101316:	5b                   	pop    %ebx
+		_move_thread_to_end_of_prio_q(_current);
+  101317:	ff 35 28 23 10 00    	pushl  0x102328
+  10131d:	e8 f6 fd ff ff       	call   101118 <_move_thread_to_end_of_prio_q>
+  101322:	5a                   	pop    %edx
+  101323:	0f ba e3 09          	bt     $0x9,%ebx
+  101327:	73 0f                	jae    101338 <_nano_sys_clock_tick_announce+0x1b3>
+	__asm__ volatile (
+  101329:	fb                   	sti    
+
+	handle_timeouts(ticks);
+
+	/* time slicing is basically handled like just yet another timeout */
+	handle_time_slicing(ticks);
+}
+  10132a:	eb 0c                	jmp    101338 <_nano_sys_clock_tick_announce+0x1b3>
+
+	/* needed to handle the start-with-delay case */
+	_mark_thread_as_started(thread);
+
+	if (_is_thread_ready(thread)) {
+		_add_thread_to_ready_q(thread);
+  10132c:	52                   	push   %edx
+  10132d:	e8 c2 fc ff ff       	call   100ff4 <_add_thread_to_ready_q>
+  101332:	58                   	pop    %eax
+  101333:	e9 4b ff ff ff       	jmp    101283 <_nano_sys_clock_tick_announce+0xfe>
+  101338:	8d 65 f4             	lea    -0xc(%ebp),%esp
+  10133b:	5b                   	pop    %ebx
+  10133c:	5e                   	pop    %esi
+  10133d:	5f                   	pop    %edi
+  10133e:	5d                   	pop    %ebp
+  10133f:	c3                   	ret    
+
+00101340 <_is_thread_ready>:
+{
+  101340:	55                   	push   %ebp
+  101341:	89 e5                	mov    %esp,%ebp
+	return !(_is_thread_prevented_from_running(thread) ||
+  101343:	f6 40 09 1f          	testb  $0x1f,0x9(%eax)
+  101347:	75 09                	jne    101352 <_is_thread_ready+0x12>
+  101349:	83 78 20 ff          	cmpl   $0xffffffff,0x20(%eax)
+  10134d:	0f 94 c0             	sete   %al
+  101350:	eb 02                	jmp    101354 <_is_thread_ready+0x14>
+  101352:	31 c0                	xor    %eax,%eax
+  101354:	0f b6 c0             	movzbl %al,%eax
+}
+  101357:	5d                   	pop    %ebp
+  101358:	c3                   	ret    
+
+00101359 <_abort_timeout>:
+	}
+}
+
+/* returns _INACTIVE if the timer is not active */
+static inline int _abort_timeout(struct _timeout *timeout)
+{
+  101359:	55                   	push   %ebp
+	if (timeout->delta_ticks_from_prev == _INACTIVE) {
+  10135a:	8b 48 10             	mov    0x10(%eax),%ecx
+{
+  10135d:	89 e5                	mov    %esp,%ebp
+	if (timeout->delta_ticks_from_prev == _INACTIVE) {
+  10135f:	83 f9 ff             	cmp    $0xffffffff,%ecx
+  101362:	74 24                	je     101388 <_abort_timeout+0x2f>
+		return _INACTIVE;
+	}
+
+	if (!sys_dlist_is_tail(&_timeout_q, &timeout->node)) {
+  101364:	3b 05 30 23 10 00    	cmp    0x102330,%eax
+  10136a:	74 05                	je     101371 <_abort_timeout+0x18>
+	return (node == list->tail) ? NULL : node->next;
+  10136c:	8b 10                	mov    (%eax),%edx
+		sys_dnode_t *next_node =
+			sys_dlist_peek_next(&_timeout_q, &timeout->node);
+		struct _timeout *next = (struct _timeout *)next_node;
+
+		next->delta_ticks_from_prev += timeout->delta_ticks_from_prev;
+  10136e:	01 4a 10             	add    %ecx,0x10(%edx)
+	node->prev->next = node->next;
+  101371:	8b 50 04             	mov    0x4(%eax),%edx
+  101374:	8b 08                	mov    (%eax),%ecx
+  101376:	89 0a                	mov    %ecx,(%edx)
+	node->next->prev = node->prev;
+  101378:	8b 08                	mov    (%eax),%ecx
+  10137a:	89 51 04             	mov    %edx,0x4(%ecx)
+	}
+	sys_dlist_remove(&timeout->node);
+	timeout->delta_ticks_from_prev = _INACTIVE;
+  10137d:	c7 40 10 ff ff ff ff 	movl   $0xffffffff,0x10(%eax)
+
+	return 0;
+  101384:	31 c0                	xor    %eax,%eax
+  101386:	eb 03                	jmp    10138b <_abort_timeout+0x32>
+		return _INACTIVE;
+  101388:	83 c8 ff             	or     $0xffffffff,%eax
+}
+  10138b:	5d                   	pop    %ebp
+  10138c:	c3                   	ret    
+
+0010138d <schedule_new_thread>:
+}
+#endif
+
+#ifdef CONFIG_MULTITHREADING
+static void schedule_new_thread(struct k_thread *thread, int32_t delay)
+{
+  10138d:	55                   	push   %ebp
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+	if (delay == 0) {
+  10138e:	85 d2                	test   %edx,%edx
+{
+  101390:	89 e5                	mov    %esp,%ebp
+  101392:	57                   	push   %edi
+  101393:	56                   	push   %esi
+  101394:	53                   	push   %ebx
+  101395:	51                   	push   %ecx
+  101396:	89 c1                	mov    %eax,%ecx
+	if (delay == 0) {
+  101398:	75 41                	jne    1013db <schedule_new_thread+0x4e>
+	__asm__ volatile (
+  10139a:	9c                   	pushf  
+  10139b:	fa                   	cli    
+  10139c:	5b                   	pop    %ebx
+	thread->base.thread_state &= ~_THREAD_PRESTART;
+  10139d:	80 60 09 fb          	andb   $0xfb,0x9(%eax)
+	if (_is_thread_ready(thread)) {
+  1013a1:	e8 9a ff ff ff       	call   101340 <_is_thread_ready>
+  1013a6:	85 c0                	test   %eax,%eax
+  1013a8:	75 09                	jne    1013b3 <schedule_new_thread+0x26>
+  1013aa:	0f ba e3 09          	bt     $0x9,%ebx
+  1013ae:	e9 b1 00 00 00       	jmp    101464 <schedule_new_thread+0xd7>
+		_add_thread_to_ready_q(thread);
+  1013b3:	51                   	push   %ecx
+  1013b4:	e8 3b fc ff ff       	call   100ff4 <_add_thread_to_ready_q>
+	return _is_preempt(_current) && __must_switch_threads();
+  1013b9:	a1 28 23 10 00       	mov    0x102328,%eax
+  1013be:	5a                   	pop    %edx
+  1013bf:	66 83 78 0a 7f       	cmpw   $0x7f,0xa(%eax)
+  1013c4:	77 e4                	ja     1013aa <schedule_new_thread+0x1d>
+  1013c6:	e8 ec fc ff ff       	call   1010b7 <__must_switch_threads>
+  1013cb:	85 c0                	test   %eax,%eax
+  1013cd:	74 db                	je     1013aa <schedule_new_thread+0x1d>
+			_Swap(key);
+  1013cf:	53                   	push   %ebx
+  1013d0:	e8 85 f7 ff ff       	call   100b5a <_Swap>
+  1013d5:	58                   	pop    %eax
+  1013d6:	e9 8c 00 00 00       	jmp    101467 <schedule_new_thread+0xda>
+  1013db:	9c                   	pushf  
+  1013dc:	fa                   	cli    
+  1013dd:	8f 45 f0             	popl   -0x10(%ebp)
+	return (int32_t)ceiling_fraction((uint32_t)ms, _ms_per_tick);
+  1013e0:	be 0a 00 00 00       	mov    $0xa,%esi
+
+static inline void _add_thread_timeout(struct k_thread *thread,
+				       _wait_q_t *wait_q,
+				       int32_t timeout_in_ticks)
+{
+	_add_timeout(thread, &thread->base.timeout, wait_q, timeout_in_ticks);
+  1013e5:	8d 58 10             	lea    0x10(%eax),%ebx
+  1013e8:	8d 42 09             	lea    0x9(%edx),%eax
+  1013eb:	31 d2                	xor    %edx,%edx
+  1013ed:	f7 f6                	div    %esi
+		start_thread(thread);
+	} else {
+		int32_t ticks = _TICK_ALIGN + _ms_to_ticks(delay);
+  1013ef:	40                   	inc    %eax
+	timeout->thread = thread;
+  1013f0:	89 49 18             	mov    %ecx,0x18(%ecx)
+  1013f3:	89 41 20             	mov    %eax,0x20(%ecx)
+	return list->head == list;
+  1013f6:	a1 2c 23 10 00       	mov    0x10232c,%eax
+	timeout->wait_q = (sys_dlist_t *)wait_q;
+  1013fb:	c7 41 1c 00 00 00 00 	movl   $0x0,0x1c(%ecx)
+	SYS_DLIST_FOR_EACH_CONTAINER(&_timeout_q, in_q, node) {
+  101402:	85 c0                	test   %eax,%eax
+  101404:	74 0d                	je     101413 <schedule_new_thread+0x86>
+  101406:	8b 3d 30 23 10 00    	mov    0x102330,%edi
+  10140c:	3d 2c 23 10 00       	cmp    $0x10232c,%eax
+  101411:	75 19                	jne    10142c <schedule_new_thread+0x9f>
+	node->next = list;
+  101413:	c7 41 10 2c 23 10 00 	movl   $0x10232c,0x10(%ecx)
+	node->prev = list->tail;
+  10141a:	a1 30 23 10 00       	mov    0x102330,%eax
+  10141f:	89 41 14             	mov    %eax,0x14(%ecx)
+	list->tail->next = node;
+  101422:	89 18                	mov    %ebx,(%eax)
+	list->tail = node;
+  101424:	89 1d 30 23 10 00    	mov    %ebx,0x102330
+  10142a:	eb 31                	jmp    10145d <schedule_new_thread+0xd0>
+		if (*delta <= in_q->delta_ticks_from_prev) {
+  10142c:	8b 51 20             	mov    0x20(%ecx),%edx
+  10142f:	8b 70 10             	mov    0x10(%eax),%esi
+  101432:	39 f2                	cmp    %esi,%edx
+  101434:	7f 18                	jg     10144e <schedule_new_thread+0xc1>
+			in_q->delta_ticks_from_prev -= *delta;
+  101436:	29 d6                	sub    %edx,%esi
+		node->prev = insert_point->prev;
+  101438:	8b 50 04             	mov    0x4(%eax),%edx
+  10143b:	89 70 10             	mov    %esi,0x10(%eax)
+  10143e:	89 51 14             	mov    %edx,0x14(%ecx)
+		node->next = insert_point;
+  101441:	89 41 10             	mov    %eax,0x10(%ecx)
+		insert_point->prev->next = node;
+  101444:	8b 50 04             	mov    0x4(%eax),%edx
+  101447:	89 1a                	mov    %ebx,(%edx)
+		insert_point->prev = node;
+  101449:	89 58 04             	mov    %ebx,0x4(%eax)
+  10144c:	eb 0f                	jmp    10145d <schedule_new_thread+0xd0>
+		*delta -= in_q->delta_ticks_from_prev;
+  10144e:	29 f2                	sub    %esi,%edx
+	return (node == list->tail) ? NULL : node->next;
+  101450:	39 f8                	cmp    %edi,%eax
+  101452:	89 51 20             	mov    %edx,0x20(%ecx)
+  101455:	74 bc                	je     101413 <schedule_new_thread+0x86>
+  101457:	8b 00                	mov    (%eax),%eax
+	SYS_DLIST_FOR_EACH_CONTAINER(&_timeout_q, in_q, node) {
+  101459:	85 c0                	test   %eax,%eax
+  10145b:	eb b4                	jmp    101411 <schedule_new_thread+0x84>
+  10145d:	8b 45 f0             	mov    -0x10(%ebp),%eax
+  101460:	0f ba e0 09          	bt     $0x9,%eax
+  101464:	73 01                	jae    101467 <schedule_new_thread+0xda>
+	__asm__ volatile (
+  101466:	fb                   	sti    
+	}
+#else
+	ARG_UNUSED(delay);
+	start_thread(thread);
+#endif
+}
+  101467:	8d 65 f4             	lea    -0xc(%ebp),%esp
+  10146a:	5b                   	pop    %ebx
+  10146b:	5e                   	pop    %esi
+  10146c:	5f                   	pop    %edi
+  10146d:	5d                   	pop    %ebp
+  10146e:	c3                   	ret    
+
+0010146f <k_is_in_isr>:
+{
+  10146f:	55                   	push   %ebp
+	return _is_in_isr();
+  101470:	31 c0                	xor    %eax,%eax
+{
+  101472:	89 e5                	mov    %esp,%ebp
+}
+  101474:	5d                   	pop    %ebp
+	return _is_in_isr();
+  101475:	83 3d 20 23 10 00 00 	cmpl   $0x0,0x102320
+  10147c:	0f 95 c0             	setne  %al
+}
+  10147f:	c3                   	ret    
+
+00101480 <_is_thread_essential>:
+	return _current->base.user_options & K_ESSENTIAL;
+  101480:	a1 28 23 10 00       	mov    0x102328,%eax
+{
+  101485:	55                   	push   %ebp
+  101486:	89 e5                	mov    %esp,%ebp
+}
+  101488:	5d                   	pop    %ebp
+	return _current->base.user_options & K_ESSENTIAL;
+  101489:	8a 40 08             	mov    0x8(%eax),%al
+  10148c:	83 e0 01             	and    $0x1,%eax
+}
+  10148f:	c3                   	ret    
+
+00101490 <_thread_entry>:
+{
+  101490:	55                   	push   %ebp
+  101491:	89 e5                	mov    %esp,%ebp
+	entry(p1, p2, p3);
+  101493:	ff 75 14             	pushl  0x14(%ebp)
+  101496:	ff 75 10             	pushl  0x10(%ebp)
+  101499:	ff 75 0c             	pushl  0xc(%ebp)
+  10149c:	ff 55 08             	call   *0x8(%ebp)
+  10149f:	83 c4 0c             	add    $0xc,%esp
+	if (_is_thread_essential()) {
+  1014a2:	e8 d9 ff ff ff       	call   101480 <_is_thread_essential>
+  1014a7:	85 c0                	test   %eax,%eax
+  1014a9:	74 0c                	je     1014b7 <_thread_entry+0x27>
+		_NanoFatalErrorHandler(_NANO_ERR_INVALID_TASK_EXIT,
+  1014ab:	68 40 19 10 00       	push   $0x101940
+  1014b0:	6a 03                	push   $0x3
+  1014b2:	e8 37 f7 ff ff       	call   100bee <_NanoFatalErrorHandler>
+	k_thread_abort(_current);
+  1014b7:	ff 35 28 23 10 00    	pushl  0x102328
+  1014bd:	e8 05 01 00 00       	call   1015c7 <k_thread_abort>
+  1014c2:	58                   	pop    %eax
+
+001014c3 <_k_thread_single_abort>:
+
+	_reschedule_threads(key);
+}
+
+void _k_thread_single_abort(struct k_thread *thread)
+{
+  1014c3:	55                   	push   %ebp
+  1014c4:	89 e5                	mov    %esp,%ebp
+  1014c6:	53                   	push   %ebx
+  1014c7:	8b 5d 08             	mov    0x8(%ebp),%ebx
+	if (thread->fn_abort != NULL) {
+  1014ca:	8b 43 30             	mov    0x30(%ebx),%eax
+  1014cd:	85 c0                	test   %eax,%eax
+  1014cf:	74 02                	je     1014d3 <_k_thread_single_abort+0x10>
+		thread->fn_abort();
+  1014d1:	ff d0                	call   *%eax
+	}
+
+	if (_is_thread_ready(thread)) {
+  1014d3:	89 d8                	mov    %ebx,%eax
+  1014d5:	e8 66 fe ff ff       	call   101340 <_is_thread_ready>
+  1014da:	85 c0                	test   %eax,%eax
+  1014dc:	74 09                	je     1014e7 <_k_thread_single_abort+0x24>
+		_remove_thread_from_ready_q(thread);
+  1014de:	53                   	push   %ebx
+  1014df:	e8 71 fb ff ff       	call   101055 <_remove_thread_from_ready_q>
+  1014e4:	58                   	pop    %eax
+  1014e5:	eb 24                	jmp    10150b <_k_thread_single_abort+0x48>
+	} else {
+		if (_is_thread_pending(thread)) {
+  1014e7:	f6 43 09 02          	testb  $0x2,0x9(%ebx)
+  1014eb:	74 10                	je     1014fd <_k_thread_single_abort+0x3a>
+	node->prev->next = node->next;
+  1014ed:	8b 43 04             	mov    0x4(%ebx),%eax
+  1014f0:	8b 13                	mov    (%ebx),%edx
+  1014f2:	89 10                	mov    %edx,(%eax)
+	node->next->prev = node->prev;
+  1014f4:	8b 13                	mov    (%ebx),%edx
+  1014f6:	89 42 04             	mov    %eax,0x4(%edx)
+	thread->base.thread_state &= ~_THREAD_PENDING;
+  1014f9:	80 63 09 fd          	andb   $0xfd,0x9(%ebx)
+			_unpend_thread(thread);
+		}
+		if (_is_thread_timeout_active(thread)) {
+  1014fd:	83 7b 20 ff          	cmpl   $0xffffffff,0x20(%ebx)
+  101501:	74 08                	je     10150b <_k_thread_single_abort+0x48>
+	return _abort_timeout(&thread->base.timeout);
+  101503:	8d 43 10             	lea    0x10(%ebx),%eax
+  101506:	e8 4e fe ff ff       	call   101359 <_abort_timeout>
+ *
+ * This routine must be called with interrupts locked.
+ */
+static inline void _mark_thread_as_dead(struct k_thread *thread)
+{
+	thread->base.thread_state |= _THREAD_DEAD;
+  10150b:	80 4b 09 08          	orb    $0x8,0x9(%ebx)
+			_abort_thread_timeout(thread);
+		}
+	}
+	_mark_thread_as_dead(thread);
+}
+  10150f:	8b 5d fc             	mov    -0x4(%ebp),%ebx
+  101512:	c9                   	leave  
+  101513:	c3                   	ret    
+
+00101514 <_init_static_threads>:
+
+#ifdef CONFIG_MULTITHREADING
+void _init_static_threads(void)
+{
+  101514:	55                   	push   %ebp
+  101515:	89 e5                	mov    %esp,%ebp
+  101517:	56                   	push   %esi
+  101518:	53                   	push   %ebx
+	unsigned int  key;
+
+	_FOREACH_STATIC_THREAD(thread_data) {
+  101519:	bb fc 22 10 00       	mov    $0x1022fc,%ebx
+  10151e:	81 fb fc 22 10 00    	cmp    $0x1022fc,%ebx
+  101524:	73 29                	jae    10154f <_init_static_threads+0x3b>
+		_task_group_adjust(thread_data);
+		_new_thread(
+  101526:	ff 73 1c             	pushl  0x1c(%ebx)
+  101529:	ff 73 18             	pushl  0x18(%ebx)
+  10152c:	ff 73 14             	pushl  0x14(%ebx)
+  10152f:	ff 73 10             	pushl  0x10(%ebx)
+  101532:	ff 73 0c             	pushl  0xc(%ebx)
+  101535:	ff 73 08             	pushl  0x8(%ebx)
+  101538:	ff 73 04             	pushl  0x4(%ebx)
+  10153b:	ff 33                	pushl  (%ebx)
+  10153d:	e8 41 f6 ff ff       	call   100b83 <_new_thread>
+			thread_data->init_p2,
+			thread_data->init_p3,
+			thread_data->init_prio,
+			thread_data->init_options);
+
+		thread_data->thread->init_data = thread_data;
+  101542:	8b 03                	mov    (%ebx),%eax
+		_new_thread(
+  101544:	83 c4 20             	add    $0x20,%esp
+		thread_data->thread->init_data = thread_data;
+  101547:	89 58 2c             	mov    %ebx,0x2c(%eax)
+	_FOREACH_STATIC_THREAD(thread_data) {
+  10154a:	83 c3 2c             	add    $0x2c,%ebx
+  10154d:	eb cf                	jmp    10151e <_init_static_threads+0xa>
+	--_current->base.sched_locked;
+  10154f:	a1 28 23 10 00       	mov    0x102328,%eax
+  101554:	fe 48 0b             	decb   0xb(%eax)
+	__asm__ volatile (
+  101557:	9c                   	pushf  
+  101558:	fa                   	cli    
+  101559:	5e                   	pop    %esi
+	 *
+	 * Note that static threads defined using the legacy API have a
+	 * delay of K_FOREVER.
+	 */
+	key = irq_lock();
+	_FOREACH_STATIC_THREAD(thread_data) {
+  10155a:	bb fc 22 10 00       	mov    $0x1022fc,%ebx
+  10155f:	81 fb fc 22 10 00    	cmp    $0x1022fc,%ebx
+  101565:	73 14                	jae    10157b <_init_static_threads+0x67>
+		if (thread_data->init_delay != K_FOREVER) {
+  101567:	8b 53 20             	mov    0x20(%ebx),%edx
+  10156a:	83 fa ff             	cmp    $0xffffffff,%edx
+  10156d:	74 07                	je     101576 <_init_static_threads+0x62>
+			schedule_new_thread(thread_data->thread,
+  10156f:	8b 03                	mov    (%ebx),%eax
+  101571:	e8 17 fe ff ff       	call   10138d <schedule_new_thread>
+	_FOREACH_STATIC_THREAD(thread_data) {
+  101576:	83 c3 2c             	add    $0x2c,%ebx
+  101579:	eb e4                	jmp    10155f <_init_static_threads+0x4b>
+  10157b:	0f ba e6 09          	bt     $0x9,%esi
+  10157f:	73 01                	jae    101582 <_init_static_threads+0x6e>
+	__asm__ volatile (
+  101581:	fb                   	sti    
+					    thread_data->init_delay);
+		}
+	}
+	irq_unlock(key);
+	k_sched_unlock();
+}
+  101582:	8d 65 f8             	lea    -0x8(%ebp),%esp
+  101585:	5b                   	pop    %ebx
+  101586:	5e                   	pop    %esi
+  101587:	5d                   	pop    %ebp
+	k_sched_unlock();
+  101588:	e9 74 fb ff ff       	jmp    101101 <k_sched_unlock>
+
+0010158d <_init_thread_base>:
+#endif
+
+void _init_thread_base(struct _thread_base *thread_base, int priority,
+		       uint32_t initial_state, unsigned int options)
+{
+  10158d:	55                   	push   %ebp
+  10158e:	89 e5                	mov    %esp,%ebp
+  101590:	8b 45 08             	mov    0x8(%ebp),%eax
+	/* k_q_node is initialized upon first insertion in a list */
+
+	thread_base->user_options = (uint8_t)options;
+  101593:	8b 55 14             	mov    0x14(%ebp),%edx
+  101596:	88 50 08             	mov    %dl,0x8(%eax)
+	thread_base->thread_state = (uint8_t)initial_state;
+  101599:	8b 55 10             	mov    0x10(%ebp),%edx
+  10159c:	88 50 09             	mov    %dl,0x9(%eax)
+
+	thread_base->prio = priority;
+  10159f:	8b 55 0c             	mov    0xc(%ebp),%edx
+  1015a2:	88 50 0a             	mov    %dl,0xa(%eax)
+
+	thread_base->sched_locked = 0;
+  1015a5:	c6 40 0b 00          	movb   $0x0,0xb(%eax)
+	t->delta_ticks_from_prev = _INACTIVE;
+  1015a9:	c7 40 20 ff ff ff ff 	movl   $0xffffffff,0x20(%eax)
+	t->wait_q = NULL;
+  1015b0:	c7 40 1c 00 00 00 00 	movl   $0x0,0x1c(%eax)
+	t->thread = NULL;
+  1015b7:	c7 40 18 00 00 00 00 	movl   $0x0,0x18(%eax)
+	t->func = func;
+  1015be:	c7 40 24 00 00 00 00 	movl   $0x0,0x24(%eax)
+
+	/* swap_data does not need to be initialized */
+
+	_init_thread_timeout(thread_base);
+}
+  1015c5:	5d                   	pop    %ebp
+  1015c6:	c3                   	ret    
+
+001015c7 <k_thread_abort>:
+
+extern void _k_thread_single_abort(struct k_thread *thread);
+
+#if !defined(CONFIG_ARCH_HAS_THREAD_ABORT)
+void k_thread_abort(k_tid_t thread)
+{
+  1015c7:	55                   	push   %ebp
+  1015c8:	89 e5                	mov    %esp,%ebp
+  1015ca:	56                   	push   %esi
+  1015cb:	53                   	push   %ebx
+  1015cc:	8b 75 08             	mov    0x8(%ebp),%esi
+	__asm__ volatile (
+  1015cf:	9c                   	pushf  
+  1015d0:	fa                   	cli    
+  1015d1:	5b                   	pop    %ebx
+	unsigned int key;
+
+	key = irq_lock();
+
+	_k_thread_single_abort(thread);
+  1015d2:	56                   	push   %esi
+  1015d3:	e8 eb fe ff ff       	call   1014c3 <_k_thread_single_abort>
+  1015d8:	5a                   	pop    %edx
+	_thread_monitor_exit(thread);
+
+	if (_current == thread) {
+  1015d9:	3b 35 28 23 10 00    	cmp    0x102328,%esi
+  1015df:	75 07                	jne    1015e8 <k_thread_abort+0x21>
+		_Swap(key);
+  1015e1:	53                   	push   %ebx
+  1015e2:	e8 73 f5 ff ff       	call   100b5a <_Swap>
+  1015e7:	58                   	pop    %eax
+		CODE_UNREACHABLE;
+	}
+
+	/* The abort handler might have altered the ready queue. */
+	_reschedule_threads(key);
+  1015e8:	89 5d 08             	mov    %ebx,0x8(%ebp)
+}
+  1015eb:	8d 65 f8             	lea    -0x8(%ebp),%esp
+  1015ee:	5b                   	pop    %ebx
+  1015ef:	5e                   	pop    %esi
+  1015f0:	5d                   	pop    %ebp
+	_reschedule_threads(key);
+  1015f1:	e9 dc fa ff ff       	jmp    1010d2 <_reschedule_threads>
+
+001015f6 <idle>:
+#else
+#define IDLE_YIELD_IF_COOP() do { } while ((0))
+#endif
+
+void idle(void *unused1, void *unused2, void *unused3)
+{
+  1015f6:	55                   	push   %ebp
+  1015f7:	89 e5                	mov    %esp,%ebp
+  1015f9:	9c                   	pushf  
+  1015fa:	fa                   	cli    
+  1015fb:	58                   	pop    %eax
+	k_cpu_idle();
+  1015fc:	e8 39 f4 ff ff       	call   100a3a <k_cpu_idle>
+  101601:	eb f6                	jmp    1015f9 <idle+0x3>
+
+00101603 <_OffsetAbsSyms>:
+/*
+ * The final link step uses the symbol _OffsetAbsSyms to force the linkage of
+ * offsets.o into the ELF image.
+ */
+
+GEN_ABS_SYM_BEGIN(_OffsetAbsSyms)
+  101603:	55                   	push   %ebp
+  101604:	89 e5                	mov    %esp,%ebp
+/* size of the ISR_LIST structure. Used by linker scripts */
+
+GEN_ABSOLUTE_SYM(__ISR_LIST_SIZEOF, sizeof(ISR_LIST));
+
+
+GEN_ABS_SYM_END
+  101606:	5d                   	pop    %ebp
+  101607:	c3                   	ret    
+
+00101608 <_handle_exc_0_vector_0_stub>:
+  101608:	6a 00                	push   $0x0
+  10160a:	68 19 0d 10 00       	push   $0x100d19
+  10160f:	e9 a9 f4 ff ff       	jmp    100abd <_exception_enter>
+
+00101614 <_handle_exc_2_vector_2_stub>:
+  101614:	6a 00                	push   $0x0
+  101616:	68 26 0d 10 00       	push   $0x100d26
+  10161b:	e9 9d f4 ff ff       	jmp    100abd <_exception_enter>
+
+00101620 <_handle_exc_4_vector_4_stub>:
+  101620:	6a 00                	push   $0x0
+  101622:	68 36 0d 10 00       	push   $0x100d36
+  101627:	e9 91 f4 ff ff       	jmp    100abd <_exception_enter>
+
+0010162c <_handle_exc_5_vector_5_stub>:
+  10162c:	6a 00                	push   $0x0
+  10162e:	68 46 0d 10 00       	push   $0x100d46
+  101633:	e9 85 f4 ff ff       	jmp    100abd <_exception_enter>
+
+00101638 <_handle_exc_6_vector_6_stub>:
+  101638:	6a 00                	push   $0x0
+  10163a:	68 56 0d 10 00       	push   $0x100d56
+  10163f:	e9 79 f4 ff ff       	jmp    100abd <_exception_enter>
+
+00101644 <_handle_exc_7_vector_7_stub>:
+  101644:	6a 00                	push   $0x0
+  101646:	68 66 0d 10 00       	push   $0x100d66
+  10164b:	e9 6d f4 ff ff       	jmp    100abd <_exception_enter>
+
+00101650 <_handle_exc_8_vector_8_stub>:
+  101650:	68 76 0d 10 00       	push   $0x100d76
+  101655:	e9 63 f4 ff ff       	jmp    100abd <_exception_enter>
+
+0010165a <_handle_exc_10_vector_10_stub>:
+  10165a:	68 86 0d 10 00       	push   $0x100d86
+  10165f:	e9 59 f4 ff ff       	jmp    100abd <_exception_enter>
+
+00101664 <_handle_exc_11_vector_11_stub>:
+  101664:	68 96 0d 10 00       	push   $0x100d96
+  101669:	e9 4f f4 ff ff       	jmp    100abd <_exception_enter>
+
+0010166e <_handle_exc_12_vector_12_stub>:
+  10166e:	68 a6 0d 10 00       	push   $0x100da6
+  101673:	e9 45 f4 ff ff       	jmp    100abd <_exception_enter>
+
+00101678 <_handle_exc_13_vector_13_stub>:
+  101678:	68 b6 0d 10 00       	push   $0x100db6
+  10167d:	e9 3b f4 ff ff       	jmp    100abd <_exception_enter>
+
+00101682 <_handle_exc_14_vector_14_stub>:
+  101682:	68 c6 0d 10 00       	push   $0x100dc6
+  101687:	e9 31 f4 ff ff       	jmp    100abd <_exception_enter>
+
+0010168c <_handle_exc_16_vector_16_stub>:
+  10168c:	6a 00                	push   $0x0
+  10168e:	68 d6 0d 10 00       	push   $0x100dd6
+  101693:	e9 25 f4 ff ff       	jmp    100abd <_exception_enter>
+
+00101698 <_handle_exc_17_vector_17_stub>:
+  101698:	68 e6 0d 10 00       	push   $0x100de6
+  10169d:	e9 1b f4 ff ff       	jmp    100abd <_exception_enter>
+
+001016a2 <_handle_exc_18_vector_18_stub>:
+  1016a2:	6a 00                	push   $0x0
+  1016a4:	68 f6 0d 10 00       	push   $0x100df6
+  1016a9:	e9 0f f4 ff ff       	jmp    100abd <_exception_enter>

@@ -1,0 +1,58 @@
+# Kconfig.defconfig.cc3200- TI SimpleLink CC3200 SoC
+#
+
+if SOC_CC3200
+
+config SOC
+	string
+	default cc3200
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 80000000
+
+if !HAS_DTS
+config SRAM_SIZE
+	default 240
+
+config FLASH_SIZE
+	default 0
+
+config NUM_IRQS
+	int
+	# must be >= the highest interrupt number used
+	# This includes the NWP interrupt
+	default 179
+
+endif # !HAS_DTS
+
+config CC3200SDK_LIBRARY
+	def_bool n
+
+if !HAS_DTS
+if UART_CC32XX
+config UART_CC32XX_IRQ_PRI
+	default 3
+endif # UART_CC32XX
+endif # !HAS_DTS
+
+if GPIO
+
+config GPIO_CC32XX
+	def_bool y
+
+config GPIO_CC32XX_A0
+	default n
+
+config GPIO_CC32XX_A1
+	default y
+
+config GPIO_CC32XX_A2
+	default y
+
+config GPIO_CC32XX_A3
+	default n
+
+endif # GPIO
+
+endif # SOC_CC3200
