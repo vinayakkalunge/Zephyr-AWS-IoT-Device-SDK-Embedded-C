@@ -1,0 +1,1 @@
+cmd_subsys/net/built-in.o :=  /opt/zephyr-sdk/sysroots/x86_64-pokysdk-linux/usr/bin/i586-zephyr-elf/i586-zephyr-elf-ld -nostartfiles -nodefaultlibs -nostdlib -static   -r -o subsys/net/built-in.o subsys/net/buf.o subsys/net/ip/built-in.o subsys/net/lib/built-in.o 
