@@ -34,11 +34,11 @@ extern "C" {
 /**
  * The platform specific timer header that defines the Timer struct
  */
-#include "timer_platform.h"
+#include "timer_platform.h"	
 
 #include <stdint.h>
 #include <stdbool.h>
-
+#include <kernel.h>													// c
 /**
  * @brief Timer Type
  *
@@ -47,7 +47,8 @@ extern "C" {
  * in "timer_<platform>.h" and include that file above.
  *
  */
-typedef struct Timer Timer;
+// typedef struct Timer Timer;     
+	typedef struct k_timer k_timer;		   							 //c
 
 /**
  * @brief Check if a timer is expired
@@ -57,8 +58,8 @@ typedef struct Timer Timer;
  * @param Timer - pointer to the timer to be checked for expiration
  * @return bool - true = timer expired, false = timer not expired
  */
-bool has_timer_expired(Timer *);
-
+//bool has_timer_expired(Timer *);
+	bool has_timer_expired(k_timer *);								// c
 /**
  * @brief Create a timer (milliseconds)
  *
@@ -67,7 +68,8 @@ bool has_timer_expired(Timer *);
  * @param Timer - pointer to the timer to be set to expire in milliseconds
  * @param uint32_t - set the timer to expire in this number of milliseconds
  */
-void countdown_ms(Timer *, uint32_t);
+//void countdown_ms(Timer *, uint32_t);				
+	void countdown_ms(k_timer *, int32_t);							// c
 
 /**
  * @brief Create a timer (seconds)
@@ -77,7 +79,8 @@ void countdown_ms(Timer *, uint32_t);
  * @param Timer - pointer to the timer to be set to expire in seconds
  * @param uint32_t - set the timer to expire in this number of seconds
  */
-void countdown_sec(Timer *, uint32_t);
+//void countdown_sec(Timer *, uint32_t);
+	void countdown_sec(k_imer *, int32_t);							// c
 
 /**
  * @brief Check the time remaining on a given timer
@@ -87,7 +90,8 @@ void countdown_sec(Timer *, uint32_t);
  * @param Timer - pointer to the timer to be set to checked
  * @return int - milliseconds left on the countdown timer
  */
-uint32_t left_ms(Timer *);
+//uint32_t left_ms(Timer *);
+	uint32_t left_ms(k_timer *);									// c
 
 /**
  * @brief Initialize a timer
@@ -96,7 +100,8 @@ uint32_t left_ms(Timer *);
  *
  * @param Timer - pointer to the timer to be initialized
  */
-void init_timer(Timer *);
+//void init_timer(Timer *);
+	void init_timer(k_timer *);										// c
 
 #ifdef __cplusplus
 }

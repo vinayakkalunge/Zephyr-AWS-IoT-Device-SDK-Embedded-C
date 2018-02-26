@@ -23,16 +23,17 @@ extern "C" {
 /**
  * @file timer_platform.h
  */
-#include <sys/time.h>
-#include <sys/select.h>
+//#include <sys/time.h>
+//#include <sys/select.h>
 #include "timer_interface.h"
-
 /**
  * definition of the Timer struct. Platform specific
  */
-struct Timer {
-	struct timeval end_time;
-};
+ 
+//struct Timer {								// c
+	//struct timeval end_time;
+//};
+
 
 #ifdef __cplusplus
 }
